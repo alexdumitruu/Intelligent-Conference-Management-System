@@ -1,4 +1,9 @@
 import { Module } from '@nestjs/common';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { Bid } from './entities/bid.entity';
+import { Conflict } from './entities/conflict.entity';
 
-@Module({})
-export class MatchingModule {}
+@Module({
+    imports: [SequelizeModule.forFeature([Bid, Conflict])],
+})
+export class MatchingModule { }
