@@ -1,6 +1,7 @@
-import { Table, Model, Column, DataType, ForeignKey, BelongsTo } from "sequelize-typescript";
+import { Table, Model, Column, DataType, ForeignKey, BelongsTo, HasMany } from "sequelize-typescript";
 import { Paper } from "src/papers/entities/paper.entity";
 import { User } from "src/users/entities/user.entity";
+import { ReviewComment } from "./review-comment.entity";
 
 @Table({ tableName: "reviews", underscored: true })
 export class Review extends Model {
@@ -31,4 +32,7 @@ export class Review extends Model {
     @ForeignKey(() => User)
     @BelongsTo(() => User)
     user!: User;
+
+    @HasMany(() => ReviewComment)
+    reviewComments!: ReviewComment[];
 }

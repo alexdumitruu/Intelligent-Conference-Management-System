@@ -2,7 +2,7 @@ import { Table, Model, HasMany, Column, DataType, ForeignKey, BelongsTo } from "
 import { Conference } from "src/conferences/entities/conference.entity";
 import { PaperAuthor } from "./paper-author.entity";
 import { Review } from "src/reviews/entities/review.entity";
-import { PaperHistory } from "./paper-history.entity";
+import { PaperHistory, PaperStatus } from "./paper-history.entity";
 import { Bid } from "src/matching/entities/bid.entity";
 import { Conflict } from "src/matching/entities/conflict.entity";
 
@@ -20,6 +20,9 @@ export class Paper extends Model {
 
     @Column({type: DataType.INTEGER, allowNull: false})
     conferenceId!: number;
+
+    @Column({type: DataType.ENUM(...Object.values(PaperStatus)), allowNull: false, defaultValue: PaperStatus.DRAFT})
+    status!: PaperStatus;
 
     //relationships
     @ForeignKey(() => Conference)
