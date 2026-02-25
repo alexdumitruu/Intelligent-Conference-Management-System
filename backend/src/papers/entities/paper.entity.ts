@@ -1,10 +1,10 @@
 import { Table, Model, HasMany, Column, DataType, ForeignKey, BelongsTo } from "sequelize-typescript";
-import { Conference } from "src/conferences/entities/conference.entity";
 import { PaperAuthor } from "./paper-author.entity";
-import { Review } from "src/reviews/entities/review.entity";
 import { PaperHistory, PaperStatus } from "./paper-history.entity";
-import { Bid } from "src/matching/entities/bid.entity";
-import { Conflict } from "src/matching/entities/conflict.entity";
+import { Conference } from "../../conferences/entities/conference.entity";
+import { Review } from "../../reviews/entities/review.entity";
+import { Bid } from "../../matching/entities/bid.entity";
+import { Conflict } from "../../matching/entities/conflict.entity";
 
 @Table({ tableName: "papers", underscored: true })
 export class Paper extends Model {
@@ -18,6 +18,7 @@ export class Paper extends Model {
     @Column({type: DataType.STRING, allowNull: false})
     pdfPath!: string;
 
+    @ForeignKey(() => Conference)
     @Column({type: DataType.INTEGER, allowNull: false})
     conferenceId!: number;
 
@@ -25,7 +26,6 @@ export class Paper extends Model {
     status!: PaperStatus;
 
     //relationships
-    @ForeignKey(() => Conference)
     @BelongsTo(() => Conference)
     conference!: Conference;
 

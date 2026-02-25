@@ -1,6 +1,6 @@
 import { Table, Model, Column, DataType, ForeignKey, BelongsTo } from "sequelize-typescript";
 import { Paper } from "./paper.entity";
-import { User } from "src/users/entities/user.entity";
+import { User } from "../../users/entities/user.entity";
 
 export enum PaperStatus {
   DRAFT = 'DRAFT',
@@ -14,13 +14,16 @@ export enum PaperStatus {
 
 @Table({ tableName: "paper_histories", underscored: true })
 export class PaperHistory extends Model {
-    //attributes
+    //foreign keys
+    @ForeignKey(() => Paper)
     @Column({type: DataType.INTEGER, allowNull: false})
     paperId!: number;
 
+    @ForeignKey(() => User)
     @Column({type: DataType.INTEGER, allowNull: false})
     userId!: number;
 
+    //attributes
     @Column({type: DataType.ENUM(...Object.values(PaperStatus)), allowNull: false})
     previousState!: PaperStatus;
 
@@ -31,11 +34,9 @@ export class PaperHistory extends Model {
     timestamp!: Date;
 
     //relationships
-    @ForeignKey(() => Paper)
     @BelongsTo(() => Paper)
     paper!: Paper;
 
-    @ForeignKey(() => User)
     @BelongsTo(() => User)
     user!: User;
 }

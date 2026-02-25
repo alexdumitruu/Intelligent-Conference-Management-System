@@ -1,16 +1,19 @@
 import { Table, Model, Column, DataType, ForeignKey, BelongsTo } from "sequelize-typescript";
-import { User } from "src/users/entities/user.entity";
-import { Paper } from "src/papers/entities/paper.entity";
+import { Review } from "./review.entity";
+import { User } from "../../users/entities/user.entity";
 
 @Table({ tableName: "review_comments", underscored: true })
 export class ReviewComment extends Model {
-    //attributes
+    //foreign keys
+    @ForeignKey(() => Review)
     @Column({type: DataType.INTEGER, allowNull: false})
-    paperId!: number;
+    reviewId!: number;
 
+    @ForeignKey(() => User)
     @Column({type: DataType.INTEGER, allowNull: false})
     userId!: number;
 
+    //attributes
     @Column({type: DataType.TEXT, allowNull: false})
     content!: string;
 
@@ -18,11 +21,9 @@ export class ReviewComment extends Model {
     isVisibleToAuthors!: boolean;
 
     //relationships
-    @ForeignKey(() => Paper)
-    @BelongsTo(() => Paper)
-    paper!: Paper;
+    @BelongsTo(() => Review)
+    review!: Review;
 
-    @ForeignKey(() => User)
     @BelongsTo(() => User)
     user!: User;
 }

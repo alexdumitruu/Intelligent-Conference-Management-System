@@ -1,17 +1,20 @@
 import { Table, Model, Column, DataType, ForeignKey, BelongsTo, HasMany } from "sequelize-typescript";
-import { Paper } from "src/papers/entities/paper.entity";
-import { User } from "src/users/entities/user.entity";
+import { Paper } from "../../papers/entities/paper.entity";
+import { User } from "../../users/entities/user.entity";
 import { ReviewComment } from "./review-comment.entity";
 
 @Table({ tableName: "reviews", underscored: true })
 export class Review extends Model {
-    //attributes
+    //foreign keys
+    @ForeignKey(() => Paper)
     @Column({type: DataType.INTEGER, allowNull: false})
     paperId!: number;
 
+    @ForeignKey(() => User)
     @Column({type: DataType.INTEGER, allowNull: false})
     userId!: number;
 
+    //attributes
     @Column({type: DataType.INTEGER, allowNull: false})
     score!: number;
 
@@ -25,11 +28,9 @@ export class Review extends Model {
     contentChair!: string;
 
     //relationships
-    @ForeignKey(() => Paper)
     @BelongsTo(() => Paper)
     paper!: Paper;
 
-    @ForeignKey(() => User)
     @BelongsTo(() => User)
     user!: User;
 

@@ -1,6 +1,6 @@
 import { Table, Model, HasMany, Column, DataType } from "sequelize-typescript";
 import { ConferenceRole } from "./conference-role.entity";
-import { Paper } from "src/papers/entities/paper.entity";
+import { Paper } from "../../papers/entities/paper.entity";
 
 export enum ConferenceStatus {
     PREPARATION = 'PREPARATION', 
