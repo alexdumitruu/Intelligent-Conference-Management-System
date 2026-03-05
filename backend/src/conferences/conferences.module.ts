@@ -4,6 +4,7 @@ import { Conference } from './entities/conference.entity'
 import { ConferenceRole } from './entities/conference-role.entity'
 
 @Module({
-    imports: [SequelizeModule.forFeature([Conference, ConferenceRole])],
+  imports: [SequelizeModule.forFeature([Conference, ConferenceRole])],
+  exports: [SequelizeModule],
 })
 export class ConferencesModule { }
