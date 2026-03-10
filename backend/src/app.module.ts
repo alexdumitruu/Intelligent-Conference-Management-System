@@ -9,6 +9,7 @@ import { ConferencesModule } from "./conferences/conferences.module";
 import { PapersModule } from "./papers/papers.module";
 import { ReviewsModule } from "./reviews/reviews.module";
 import { MatchingModule } from "./matching/matching.module";
+import { CitationsModule } from './citations/citations.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -31,6 +32,7 @@ import { MatchingModule } from "./matching/matching.module";
     PapersModule,
     ReviewsModule,
     MatchingModule,
+    CitationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
