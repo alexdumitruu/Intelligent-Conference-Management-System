@@ -15,8 +15,11 @@ export class Paper extends Model {
     @Column({type: DataType.TEXT, allowNull: false})
     abstract!: string;
 
-    @Column({type: DataType.STRING, allowNull: false})
+    @Column({type: DataType.STRING, allowNull: true})
     pdfPath!: string;
+
+    @Column({type: DataType.TEXT, allowNull: true})
+    extractedText?: string;
 
     @ForeignKey(() => Conference)
     @Column({type: DataType.INTEGER, allowNull: false})

@@ -1,11 +1,23 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { Paper } from './entities/paper.entity'
-import { PaperHistory } from './entities/paper-history.entity'
-import { PaperAuthor } from './entities/paper-author.entity'
+import { Paper } from './entities/paper.entity';
+import { PaperHistory } from './entities/paper-history.entity';
+import { PaperAuthor } from './entities/paper-author.entity';
+import { MulterModule } from '@nestjs/platform-express';
+import { PapersService } from './papers.service';
+import { PapersController } from './papers.controller';
+import { ConferencesModule } from '../conferences/conferences.module';
 
 @Module({
-    imports: [SequelizeModule.forFeature([Paper, PaperHistory, PaperAuthor])],
+  imports: [
+    SequelizeModule.forFeature([Paper, PaperHistory, PaperAuthor]),
+    MulterModule.register({
+      dest: './uploads/papers',
+    }),
+    ConferencesModule,
+  ],
+  controllers: [PapersController],
+  providers: [PapersService],
+  exports: [SequelizeModule],
 })
 export class PapersModule {}
-
