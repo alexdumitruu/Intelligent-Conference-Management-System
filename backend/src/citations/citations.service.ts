@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { firstValueFrom } from 'rxjs';
 import { CitationReport } from './entities/citation-report.entity';
 import { Paper } from '../papers/entities/paper.entity';
+import { ExtractionMethod } from './extraction-method.enum';
 
 const CROSSREF_CONFIDENCE_THRESHOLD = 50;
 
@@ -136,6 +137,7 @@ export class CitationsService {
       totalCitations: bibliographyBlock.length,
       verifiedCitations,
       flaggedErrors,
+      extractionMethod: ExtractionMethod.REGEX,
     });
   }
 }

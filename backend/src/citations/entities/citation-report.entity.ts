@@ -7,6 +7,7 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { Paper } from '../../papers/entities/paper.entity';
+import { ExtractionMethod } from '../extraction-method.enum';
 
 @Table({ tableName: 'citation_reports', underscored: true })
 export class CitationReport extends Model {
@@ -22,6 +23,12 @@ export class CitationReport extends Model {
 
   @Column({ type: DataType.JSON, allowNull: false })
   flaggedErrors!: object[];
+
+  @Column({
+    type: DataType.ENUM(...Object.values(ExtractionMethod)),
+    allowNull: false,
+  })
+  extractionMethod!: ExtractionMethod;
 
   @BelongsTo(() => Paper)
   paper!: Paper;

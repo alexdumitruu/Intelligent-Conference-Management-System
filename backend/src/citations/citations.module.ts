@@ -3,6 +3,7 @@ import { HttpModule } from '@nestjs/axios';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { CitationReport } from './entities/citation-report.entity';
 import { CitationsService } from './citations.service';
+import { AiCitationsService } from './ai-citations.service';
 import { CitationsController } from './citations.controller';
 import { PapersModule } from '../papers/papers.module';
 import { ConferencesModule } from '../conferences/conferences.module';
@@ -14,7 +15,7 @@ import { ConferencesModule } from '../conferences/conferences.module';
     PapersModule,
     ConferencesModule,
   ],
-  providers: [CitationsService],
+  providers: [CitationsService, AiCitationsService],
   controllers: [CitationsController],
 })
 export class CitationsModule {}
