@@ -5,6 +5,7 @@ import { Conference } from "../../conferences/entities/conference.entity";
 import { Review } from "../../reviews/entities/review.entity";
 import { Bid } from "../../matching/entities/bid.entity";
 import { Conflict } from "../../matching/entities/conflict.entity";
+import { CitationReport } from "../../citations/entities/citation-report.entity";
 
 @Table({ tableName: "papers", underscored: true })
 export class Paper extends Model {
@@ -46,4 +47,7 @@ export class Paper extends Model {
 
     @HasMany(() => Conflict)
     conflicts!: Conflict[];
+
+    @HasMany(() => CitationReport)
+    citationReports!: CitationReport[];
 }

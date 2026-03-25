@@ -9,6 +9,7 @@ import {
   UploadedFile,
   Req,
   ParseIntPipe,
+  Get,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
@@ -22,6 +23,14 @@ import { ConferenceRoleType } from '../conferences/entities/conference-role.enti
 @UseGuards(AuthGuard('jwt'))
 export class PapersController {
   constructor(private readonly papersService: PapersService) {}
+
+  @Get()
+  async getPapers(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+    @Req() req: any,
+  ) {
+    return this.papersService.findAll(conferenceId);
+  }
 
   @Post()
   async createDraft(

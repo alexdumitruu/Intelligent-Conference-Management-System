@@ -9,7 +9,7 @@ import { PaperHistory } from './entities/paper-history.entity';
 import { PaperStatus } from './entities/paper-history.entity';
 import { VALID_STATUS_TRANSITIONS } from './paper-status-transitions';
 import * as fs from 'fs';
-import * as pdfParse from 'pdf-parse';
+import pdfParse from 'pdf-parse';
 
 @Injectable()
 export class PapersService {
@@ -19,6 +19,10 @@ export class PapersService {
     @InjectModel(PaperHistory)
     private readonly paperHistoryModel: typeof PaperHistory,
   ) {}
+
+  async findAll(conferenceId: number): Promise<Paper[]> {
+    return this.paperModel.findAll({ where: { conferenceId } });
+  }
 
   async createPaper(
     title: string,
@@ -66,9 +70,12 @@ export class PapersService {
   async extractTextFromPdf(filePath: string): Promise<string> {
     const dataBuffer = fs.readFileSync(filePath);
     try {
-      const data = await (pdfParse as any)(dataBuffer);
+      const { PDFParse } = require('pdf-parse');
+      const parser = new PDFParse({ data: dataBuffer });
+      const data = await parser.getText();
       return data.text;
     } catch (error) {
+      console.error('PDF PARSE ERROR:', error);
       throw new BadRequestException(`Cannot extract text from PDF`);
     }
   }

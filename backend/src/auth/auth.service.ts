@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from '../users/entities/user.entity';
@@ -37,16 +41,30 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<{ accessToken: string }> {
-    const user = await this.userModel.findOne({ where: { email } });
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+    try {
+      console.log('--- LOGIN DEBUG ---');
+      console.log('EMAIL ARG:', email);
+      console.log('PASSWORD ARG:', password);
+      
+      const user = await this.userModel.findOne({ where: { email } });
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      
+      console.log('USER PASSWORD HASH:', user.passwordHash);
+      console.log('USER DATA VALUES:', user.dataValues);
+      console.log('-------------------');
+
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      const accessToken = this.generateToken(user);
+      return { accessToken };
+    } catch (error) {
+      console.error('CRASH IN AUTH SERVICE:', error);
+      throw error;
     }
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-    const accessToken = this.generateToken(user);
-    return { accessToken };
   }
   private generateToken(user: User): string {
     const payload = { sub: user.id, email: user.email };

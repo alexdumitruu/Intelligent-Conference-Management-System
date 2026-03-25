@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 import { HttpService } from '@nestjs/axios';
 import { InjectModel } from '@nestjs/sequelize';
 import { firstValueFrom } from 'rxjs';
@@ -73,23 +75,28 @@ export class AiCitationsService {
       // Extract Year (Typically found in monogr.imprint.date)
       const rawDate = biblStruct?.monogr?.imprint?.date;
       const year =
-        typeof rawDate === 'object' && rawDate['#text']
+        typeof rawDate === 'object'
           ? rawDate['#text']
+            ? rawDate['#text']
+            : rawDate['@_when'] || 'Unknown Year'
           : rawDate || 'Unknown Year';
-
-      // Extract Author (Can be complex in TEI, often an array of authors under analytic.author)
-      // NEEDING TESTING, DEPENDING ON XML FORMAT
+      // Extract Author
       let author = 'Unknown Author';
       const rawAuthor =
         biblStruct?.analytic?.author || biblStruct?.monogr?.author;
       if (rawAuthor) {
-        // If it's an array of authors, just grab the first one for simplicity, or map them
         const firstAuthor = Array.isArray(rawAuthor) ? rawAuthor[0] : rawAuthor;
-        const surname = firstAuthor?.persName?.surname;
-        author =
-          typeof surname === 'object' && surname['#text']
-            ? surname['#text']
-            : surname || author;
+        if (firstAuthor?.persName?.surname) {
+          const surname = firstAuthor.persName.surname;
+          author =
+            typeof surname === 'object' ? surname['#text'] || author : surname;
+        } else if (firstAuthor?.orgName) {
+          // Fallback for organizations
+          author =
+            typeof firstAuthor.orgName === 'object'
+              ? firstAuthor.orgName['#text']
+              : firstAuthor.orgName;
+        }
       }
       return `${author}, ${title}, ${year}`;
     });
@@ -124,6 +131,13 @@ export class AiCitationsService {
       }
     }
 
+    const oldReport = await this.citationReportModel.findOne({
+      where: { paperId, extractionMethod: ExtractionMethod.AI },
+    });
+    if (oldReport) {
+      await oldReport.destroy();
+    }
+
     return this.citationReportModel.create({
       paperId,
       totalCitations: references.length,
@@ -131,5 +145,21 @@ export class AiCitationsService {
       flaggedErrors,
       extractionMethod: ExtractionMethod.AI,
     });
+  }
+
+  async generateAiCitationReportFromStoredPdf(
+    paperId: number,
+  ): Promise<CitationReport> {
+    const paper = await this.paperModel.findByPk(paperId);
+    if (!paper) {
+      throw new NotFoundException('Paper not found');
+    }
+    if (!paper.pdfPath) {
+      throw new BadRequestException('Paper has no uploaded PDF');
+    }
+    const absolutePath = path.resolve(paper.pdfPath);
+    const fileBuffer = fs.readFileSync(absolutePath);
+    const filename = path.basename(absolutePath);
+    return this.generateAiCitationReport(paperId, fileBuffer, filename);
   }
 }

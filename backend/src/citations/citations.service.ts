@@ -6,7 +6,7 @@ import { CitationReport } from './entities/citation-report.entity';
 import { Paper } from '../papers/entities/paper.entity';
 import { ExtractionMethod } from './extraction-method.enum';
 
-const CROSSREF_CONFIDENCE_THRESHOLD = 50;
+export const CROSSREF_CONFIDENCE_THRESHOLD = 35;
 
 interface FlaggedCitation {
   citationNumber: number;
@@ -88,9 +88,10 @@ export class CitationsService {
         return { isVerified: false, reason: 'No results found in Crossref' };
       }
       const item = data[0];
+      const matchScore = Math.round(item.score);
       if (item.score > CROSSREF_CONFIDENCE_THRESHOLD)
-        return { isVerified: true, reason: 'Match found' };
-      else return { isVerified: false, reason: 'Low confidence match' };
+        return { isVerified: true, reason: `Match found (Score: ${matchScore})` };
+      else return { isVerified: false, reason: `Low confidence (Score: ${matchScore})` };
     } catch (error) {
       return { isVerified: false, reason: 'Crossref API error' };
     }
@@ -132,12 +133,25 @@ export class CitationsService {
         });
       }
     }
+    const oldReport = await this.citationReportModel.findOne({
+      where: { paperId, extractionMethod: ExtractionMethod.REGEX },
+    });
+    if (oldReport) {
+      await oldReport.destroy();
+    }
+
     return this.citationReportModel.create({
       paperId,
       totalCitations: bibliographyBlock.length,
       verifiedCitations,
       flaggedErrors,
       extractionMethod: ExtractionMethod.REGEX,
+    });
+  }
+
+  async getReportsByPaperId(paperId: number): Promise<CitationReport[]> {
+    return this.citationReportModel.findAll({
+      where: { paperId },
     });
   }
 }

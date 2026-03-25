@@ -29,3 +29,9 @@ npm-debug.log*
 
 # Uploads
 /backend/uploads/
+
+# Backend dependencies
+/backend/node_modules/
+
+# Backend seed script
+/backend/seed-test-data.sh
