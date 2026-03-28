@@ -9,7 +9,6 @@ import { PaperHistory } from './entities/paper-history.entity';
 import { PaperStatus } from './entities/paper-history.entity';
 import { VALID_STATUS_TRANSITIONS } from './paper-status-transitions';
 import * as fs from 'fs';
-import pdfParse from 'pdf-parse';
 
 @Injectable()
 export class PapersService {
