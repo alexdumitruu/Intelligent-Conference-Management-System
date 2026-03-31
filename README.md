@@ -1,4 +1,4 @@
-# 🎓 Intelligent Conference Management System (CMS)
+# Intelligent Conference Management System (CMS)
 
 A modern, open-source Conference Management System designed to handle the complex workflows of academic publishing. Built as a university thesis project, this platform addresses the scalability and integrity crises in modern peer review by integrating a robust state-machine backend with an **AI-driven Citation Verification** pipeline.
 
@@ -86,7 +86,7 @@ The application will be available at [http://localhost:5173](http://localhost:51
 
 ---
 
-## Workflow / Usage Overview
+## Workflow / Usage Overview (subject to change)
 
 - **The Author:** Uploads an academic PDF. The backend immediately routes the file to the GROBID microservice for semantic layout analysis, validates the references via Crossref, and saves the AI confidence scores.
 
