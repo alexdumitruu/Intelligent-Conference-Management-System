@@ -10,6 +10,8 @@ import {
   Req,
   ParseIntPipe,
   Get,
+  StreamableFile,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
@@ -18,6 +20,9 @@ import { PaperStatus } from './entities/paper-history.entity';
 import { Roles } from '../common/decorators/roles.decorator';
 import { ConferenceRoleGuard } from '../common/guards/conference-role.guard';
 import { ConferenceRoleType } from '../conferences/entities/conference-role.entity';
+import { SubmitRebuttalDto } from './dto/submit-rebuttal.dto';
+import { FinalizeDecisionDto } from './dto/finalize-decision.dto';
+import { Response } from 'express';
 
 @Controller('conferences/:conferenceId/papers')
 @UseGuards(AuthGuard('jwt'))
@@ -67,5 +72,39 @@ export class PapersController {
       body.targetStatus,
       req.user.userId,
     );
+  }
+
+  @Get(':paperId/pdf')
+  async downloadPaperPdf(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Req() req: any,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    return this.papersService.getPaperPdfStream(
+      paperId,
+      req.user.userId,
+      conferenceId,
+    );
+  }
+
+  @Post(':paperId/rebuttal')
+  async submitRebuttal(
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Body() dto: SubmitRebuttalDto,
+    @Req() req: any,
+  ) {
+    return this.papersService.submitRebuttal(paperId, req.user.userId, dto);
+  }
+
+  @Post(':paperId/decision')
+  @UseGuards(ConferenceRoleGuard)
+  @Roles(ConferenceRoleType.CHAIR)
+  async finalizeDecision(
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Body() dto: FinalizeDecisionDto,
+    @Req() req: any,
+  ) {
+    return this.papersService.finalizeDecision(paperId, dto, req.user.userId);
   }
 }

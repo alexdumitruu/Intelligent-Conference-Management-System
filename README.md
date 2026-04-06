@@ -49,7 +49,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 The citation extraction relies on pre-trained ML models. Spin up the Docker container first:
 
 ```bash
-docker run --rm -d -p 8070:8070 --name grobid lfoppiano/grobid:0.8.1
+docker run --rm -d -p 8070:8070 --name grobid grobid/grobid:0.8.1
 ```
 
 > Wait ~30 seconds for the models to load into memory. You can verify it is running by hitting [http://localhost:8070/api/isalive](http://localhost:8070/api/isalive) in your browser.
