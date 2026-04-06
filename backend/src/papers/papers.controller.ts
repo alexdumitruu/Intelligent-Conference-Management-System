@@ -74,6 +74,26 @@ export class PapersController {
     );
   }
 
+  @Get('master-table')
+  @UseGuards(ConferenceRoleGuard)
+  @Roles(ConferenceRoleType.CHAIR)
+  async getChairMasterTable(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+  ) {
+    return this.papersService.getChairMasterTable(conferenceId);
+  }
+
+  @Get(':paperId/details')
+  @UseGuards(ConferenceRoleGuard)
+  @Roles(ConferenceRoleType.REVIEWER)
+  async getReviewerPaperDetails(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Req() req: any,
+  ) {
+    return this.papersService.getReviewerPaperDetails(conferenceId, paperId);
+  }
+
   @Get(':paperId/pdf')
   async downloadPaperPdf(
     @Param('conferenceId', ParseIntPipe) conferenceId: number,

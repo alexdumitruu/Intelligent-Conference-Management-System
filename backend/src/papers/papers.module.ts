@@ -7,6 +7,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { PapersService } from './papers.service';
 import { PapersController } from './papers.controller';
 import { ConferencesModule } from '../conferences/conferences.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConferencesModule } from '../conferences/conferences.module';
       dest: './uploads/papers',
     }),
     forwardRef(() => ConferencesModule),
+    MailModule,
   ],
   controllers: [PapersController],
   providers: [PapersService],

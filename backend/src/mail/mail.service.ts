@@ -23,5 +23,26 @@ export class MailService {
     paperTitle: string,
     decision: string,
     conferenceName: string,
-  ): Promise<void> {}
+  ): Promise<void> {
+    const subject = `[${conferenceName}] Decision on your paper: ${paperTitle}`;
+    const html = `
+      <h2>Dear ${recipientName},</h2>
+      <p>We are writing to inform you about the decision regarding your paper
+      <strong>"${paperTitle}"</strong> submitted to <strong>${conferenceName}</strong>.</p>
+      <p>The committee has reached the following decision: <strong>${decision}</strong></p>
+      <p>Thank you for your submission.</p>
+      <p>Best regards,<br/>${conferenceName} Committee</p>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: this.configService.get<string>('MAIL_USER'),
+        to: recipientEmail,
+        subject,
+        html,
+      });
+    } catch (error) {
+      console.error(`Failed to send decision email to ${recipientEmail}:`, error);
+    }
+  }
 }

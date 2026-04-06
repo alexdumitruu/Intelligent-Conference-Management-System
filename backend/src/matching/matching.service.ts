@@ -1,15 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Paper } from '../papers/entities/paper.entity';
+import { User } from '../users/entities/user.entity';
 import { Bid, BidType } from './entities/bid.entity';
 import { Conflict } from './entities/conflict.entity';
 import { Review } from '../reviews/entities/review.entity';
+import { Conference } from '../conferences/entities/conference.entity';
 import {
   ConferenceRole,
   ConferenceRoleType,
 } from '../conferences/entities/conference-role.entity';
 import { PaperStatus } from '../papers/entities/paper-history.entity';
 import { PaperAuthor } from '../papers/entities/paper-author.entity';
+import { CreateBidDto } from './dto/create-bid.dto';
+import { CreateConflictDto } from './dto/create-conflict.dto';
 import * as natural from 'natural';
 
 export const MAX_REVIEWS_PER_PAPER = 3;
@@ -28,6 +36,8 @@ export class MatchingService {
     private readonly reviewModel: typeof Review,
     @InjectModel(ConferenceRole)
     private readonly conferenceRoleModel: typeof ConferenceRole,
+    @InjectModel(Conference)
+    private readonly conferenceModel: typeof Conference,
   ) {}
 
   preprocessText(text: string): string[] {
@@ -111,17 +121,65 @@ export class MatchingService {
     return dotProduct / (magnitudeA * magnitudeB);
   }
 
+  private detectInstitutionalConflicts(
+    papers: Paper[],
+    reviewerRoles: ConferenceRole[],
+    conflictSet: Set<string>,
+  ): void {
+    const genericDomains = new Set([
+      'gmail.com',
+      'yahoo.com',
+      'hotmail.com',
+      'outlook.com',
+      'protonmail.com',
+      'icloud.com',
+    ]);
+
+    const getDomain = (email: string): string => {
+      const parts = email.split('@');
+      return parts.length === 2 ? parts[1].toLowerCase() : '';
+    };
+
+    const reviewerDomains = new Map<number, string>();
+    for (const role of reviewerRoles) {
+      if (role.user?.email) {
+        reviewerDomains.set(role.userId, getDomain(role.user.email));
+      }
+    }
+
+    for (const paper of papers) {
+      if (!paper.authors) continue;
+
+      const authorDomains = paper.authors
+        .filter((a) => a.user?.email)
+        .map((a) => getDomain(a.user.email));
+
+      for (const role of reviewerRoles) {
+        const reviewerDomain = reviewerDomains.get(role.userId);
+        if (!reviewerDomain || genericDomains.has(reviewerDomain)) continue;
+
+        for (const authorDomain of authorDomains) {
+          if (authorDomain === reviewerDomain) {
+            conflictSet.add(`${paper.id}-${role.userId}`);
+            break;
+          }
+        }
+      }
+    }
+  }
+
   async executeGreedyAssignment(
     conferenceId: number,
     maxReviewsPerPaper: number,
   ): Promise<Review[]> {
     const papers = await this.paperModel.findAll({
       where: { conferenceId, status: PaperStatus.BIDDING },
-      include: [PaperAuthor],
+      include: [{ model: PaperAuthor, include: [User] }],
     });
 
     const reviewerRoles = await this.conferenceRoleModel.findAll({
       where: { conferenceId, roleType: ConferenceRoleType.REVIEWER },
+      include: [User],
     });
 
     const conflicts = await this.conflictModel.findAll({
@@ -140,6 +198,8 @@ export class MatchingService {
       conflicts.map((c) => `${c.paperId}-${c.userId}`),
     );
 
+    this.detectInstitutionalConflicts(papers, reviewerRoles, conflictSet);
+
     const authorSet = new Set<string>();
     for (const paper of papers) {
       if (paper.authors) {
@@ -156,7 +216,7 @@ export class MatchingService {
 
     const reviewerBidAbstracts = new Map<number, string[]>();
     for (const bid of bids) {
-      if (bid.bidType === BidType.POSITIVE) {
+      if (bid.bidType === BidType.YES) {
         const paper = papers.find((p) => p.id === bid.paperId);
         if (paper) {
           const existing = reviewerBidAbstracts.get(bid.userId) || [];
@@ -202,12 +262,12 @@ export class MatchingService {
         if (authorSet.has(pairKey)) continue;
 
         const bidType = bidMap.get(pairKey);
-        if (bidType === BidType.NEGATIVE) continue;
+        if (bidType === BidType.NO) continue;
 
         const reviewerVec = tfidfMatrix[reviewerIndices[ri]];
         let similarity = this.calculateCosineSimilarity(paperVec, reviewerVec);
 
-        if (bidType === BidType.POSITIVE) {
+        if (bidType === BidType.YES) {
           similarity += 0.15;
         }
 
@@ -251,5 +311,86 @@ export class MatchingService {
     }
 
     return createdReviews;
+  }
+
+  async getPapersForBidding(
+    conferenceId: number,
+    userId: number,
+  ): Promise<Paper[]> {
+    const conference = await this.conferenceModel.findByPk(conferenceId);
+    if (!conference) {
+      throw new NotFoundException('Conference not found');
+    }
+
+    const dynamicInclude: any[] = [];
+    if (!conference.isDoubleBlind) {
+      dynamicInclude.push({
+        model: PaperAuthor,
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'firstName', 'lastName', 'affiliation'],
+          },
+        ],
+      });
+    }
+
+    return this.paperModel.findAll({
+      where: { conferenceId, status: PaperStatus.BIDDING },
+      attributes: ['id', 'title', 'abstract', 'keywords', 'topics', 'createdAt'],
+      include: dynamicInclude,
+    });
+  }
+
+  async submitBid(
+    conferenceId: number,
+    userId: number,
+    dto: CreateBidDto,
+  ): Promise<Bid> {
+    const paper = await this.paperModel.findByPk(dto.paperId);
+    if (!paper || paper.conferenceId !== conferenceId) {
+      throw new NotFoundException('Paper not found in this conference');
+    }
+
+    if (paper.status !== PaperStatus.BIDDING) {
+      throw new BadRequestException(
+        'Paper must be in BIDDING status to accept bids',
+      );
+    }
+
+    await this.bidModel.upsert({
+      paperId: dto.paperId,
+      userId,
+      bidType: dto.bidType,
+    });
+
+    const bid = await this.bidModel.findOne({
+      where: { paperId: dto.paperId, userId },
+    });
+    return bid!;
+  }
+
+  async declareConflict(
+    conferenceId: number,
+    userId: number,
+    dto: CreateConflictDto,
+  ): Promise<Conflict> {
+    const paper = await this.paperModel.findByPk(dto.paperId);
+    if (!paper || paper.conferenceId !== conferenceId) {
+      throw new NotFoundException('Paper not found in this conference');
+    }
+
+    const [conflict, created] = await this.conflictModel.findOrCreate({
+      where: { paperId: dto.paperId, userId },
+      defaults: { paperId: dto.paperId, userId, reason: dto.reason },
+    });
+
+    if (!created) {
+      throw new BadRequestException(
+        'You have already declared a conflict for this paper',
+      );
+    }
+
+    return conflict;
   }
 }

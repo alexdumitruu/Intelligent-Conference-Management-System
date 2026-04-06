@@ -44,6 +44,12 @@ export class Paper extends Model {
   @Column({ type: DataType.TEXT, allowNull: true })
   rebuttalText?: string;
 
+  @Column({ type: DataType.JSON, allowNull: true })
+  keywords?: string[];
+
+  @Column({ type: DataType.JSON, allowNull: true })
+  topics?: string[];
+
   //relationships
   @BelongsTo(() => Conference)
   conference!: Conference;

@@ -68,7 +68,7 @@ export class ConferencesController {
     const newBid = new Bid({
       paperId: createBidDto.paperId,
       userId: userId,
-      bidType: createBidDto.preference,
+      bidType: createBidDto.bidType,
     });
     const existingBid = await Bid.findOne({
       where: { paperId: createBidDto.paperId, userId },

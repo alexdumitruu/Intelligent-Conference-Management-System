@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { ConferencesModule } from './conferences/conferences.module';
 import { PapersModule } from './papers/papers.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { MailModule } from './mail/mail.module';
 import { MatchingModule } from './matching/matching.module';
 import { CitationsModule } from './citations/citations.module';
 import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor';
@@ -34,6 +35,7 @@ import { Conference } from './conferences/entities/conference.entity';
     ConferencesModule,
     PapersModule,
     ReviewsModule,
+    MailModule,
     MatchingModule,
     CitationsModule,
   ],
