@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Paper } from './entities/paper.entity';
 import { PaperHistory } from './entities/paper-history.entity';
@@ -14,10 +14,10 @@ import { ConferencesModule } from '../conferences/conferences.module';
     MulterModule.register({
       dest: './uploads/papers',
     }),
-    ConferencesModule,
+    forwardRef(() => ConferencesModule),
   ],
   controllers: [PapersController],
   providers: [PapersService],
-  exports: [SequelizeModule],
+  exports: [SequelizeModule, PapersService],
 })
 export class PapersModule {}
