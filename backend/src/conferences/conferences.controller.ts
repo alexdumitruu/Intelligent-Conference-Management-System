@@ -25,8 +25,11 @@ import { PaperStatus } from '../papers/entities/paper-history.entity';
 import { Bid } from '../matching/entities/bid.entity';
 import { Conflict } from '../matching/entities/conflict.entity';
 import { Conference } from './entities/conference.entity';
+import { Review } from '../reviews/entities/review.entity';
 import { PapersService } from '../papers/papers.service';
 import { CreateConflictDto } from '../matching/dto/create-conflict.dto';
+
+import { ConferencesService } from './conferences.service';
 
 @Controller('conferences')
 @UseGuards(AuthGuard('jwt'))
@@ -34,7 +37,21 @@ export class ConferencesController {
   constructor(
     private readonly matchingService: MatchingService,
     private readonly papersService: PapersService,
+    private readonly conferencesService: ConferencesService,
   ) {}
+
+  @Get()
+  async getAllConferences() {
+    return this.conferencesService.getAllConferences();
+  }
+
+  @Get(':id/my-role')
+  async getMyRoleForConference(
+    @Param('id', ParseIntPipe) conferenceId: number,
+    @Req() req: any,
+  ) {
+    return this.conferencesService.getMyRoleForConference(conferenceId, req.user.userId);
+  }
 
   @Get(':conferenceId/bidding-papers')
   @UseGuards(ConferenceRoleGuard)
@@ -54,6 +71,27 @@ export class ConferencesController {
       throw new NotFoundException('No papers found for this conference');
     }
     return papers;
+  }
+
+  @Get(':conferenceId/assigned-papers')
+  @UseGuards(ConferenceRoleGuard)
+  @Roles(ConferenceRoleType.REVIEWER)
+  async getAssignedPapers(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+    @Req() req: any,
+  ) {
+    const reviews = await Review.findAll({
+      where: { userId: req.user.userId },
+      include: [
+        {
+          model: Paper,
+          where: { conferenceId: conferenceId },
+          attributes: ['id', 'title', 'abstract'],
+        },
+      ],
+    });
+
+    return reviews.map((r) => r.paper);
   }
 
   @Post(':conferenceId/bids')
