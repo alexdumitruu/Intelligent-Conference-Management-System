@@ -16,10 +16,11 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/conferences" element={<ConferenceSelection />} />
-      <Route path="/conferences/:id/dashboard" element={<DashboardRouter />} />
+
 
       <Route element={<ProtectedRoute />}>
+        <Route path="/conferences" element={<ConferenceSelection />} />
+        <Route path="/conferences/:id/dashboard" element={<DashboardRouter />} />
         <Route element={<DashboardLayout title="My Profile" color="primary" />}>
           <Route path="/profile" element={<Profile />} />
         </Route>

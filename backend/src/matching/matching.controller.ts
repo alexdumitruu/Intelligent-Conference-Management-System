@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -58,5 +59,26 @@ export class MatchingController {
       req.user.userId,
       dto,
     );
+  }
+
+  @Delete('conflicts/:paperId')
+  @UseGuards(ConferenceRoleGuard)
+  @Roles(ConferenceRoleType.REVIEWER)
+  async retractConflict(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Req() req: any,
+  ) {
+    return this.matchingService.retractConflict(conferenceId, req.user.userId, paperId);
+  }
+
+  @Get('assigned-papers')
+  @UseGuards(ConferenceRoleGuard)
+  @Roles(ConferenceRoleType.REVIEWER)
+  async getAssignedPapers(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+    @Req() req: any,
+  ) {
+    return this.matchingService.getAssignedPapers(conferenceId, req.user.userId);
   }
 }

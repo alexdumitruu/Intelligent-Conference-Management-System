@@ -44,7 +44,7 @@ export class Conference extends Model {
     @Column({type: DataType.DATE, allowNull: false})
     conferenceEndDate!: Date;
 
-    @Column({type: DataType.ENUM(...Object.values(ConferenceStatus)), allowNull: false})
+    @Column({type: DataType.ENUM(...Object.values(ConferenceStatus)), allowNull: false, defaultValue: ConferenceStatus.PREPARATION})
     status!: ConferenceStatus;
 
     // relationships

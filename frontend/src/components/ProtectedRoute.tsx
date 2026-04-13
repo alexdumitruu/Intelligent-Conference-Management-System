@@ -6,13 +6,8 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
   const token = localStorage.getItem('accessToken');
-  const role = localStorage.getItem('userRole');
 
   if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (requiredRole && role !== requiredRole) {
     return <Navigate to="/login" replace />;
   }
 

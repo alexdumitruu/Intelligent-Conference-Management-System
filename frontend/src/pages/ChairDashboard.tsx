@@ -9,6 +9,16 @@ import api from '../api';
 import CitationReportViewer from '../components/CitationReportViewer';
 import RoleAssignmentDialog from '../components/RoleAssignmentDialog';
 
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  DRAFT: ['SUBMITTED'],
+  SUBMITTED: ['BIDDING'],
+  BIDDING: ['UNDER_REVIEW'],
+  UNDER_REVIEW: ['DISCUSSION'],
+  DISCUSSION: ['ACCEPTED', 'REJECTED'],
+  ACCEPTED: [],
+  REJECTED: [],
+};
+
 export default function ChairDashboard() {
   const { id } = useParams<{ id: string }>();
   const [masterDatas, setMasterDatas] = useState<any[]>([]);
@@ -53,7 +63,11 @@ export default function ChairDashboard() {
 
   async function handleStatusChange(paperId: number, targetStatus: string) {
     try {
-      await api.patch(`/conferences/${id}/papers/${paperId}/status`, { targetStatus });
+      if (targetStatus === 'ACCEPTED' || targetStatus === 'REJECTED') {
+        await api.post(`/conferences/${id}/papers/${paperId}/decision`, { decision: targetStatus });
+      } else {
+        await api.patch(`/conferences/${id}/papers/${paperId}/status`, { targetStatus });
+      }
       setMasterDatas((prev) => 
         prev.map((p) => p.id === paperId ? { ...p, status: targetStatus } : p)
       );
@@ -187,14 +201,12 @@ export default function ChairDashboard() {
                     size="small"
                     value={paper.status}
                     onChange={(e) => handleStatusChange(paper.id, e.target.value as string)}
+                    disabled={(STATUS_TRANSITIONS[paper.status] || []).length === 0}
                   >
-                    <MenuItem value="DRAFT">DRAFT</MenuItem>
-                    <MenuItem value="SUBMITTED">SUBMITTED</MenuItem>
-                    <MenuItem value="BIDDING">BIDDING</MenuItem>
-                    <MenuItem value="UNDER_REVIEW">UNDER_REVIEW</MenuItem>
-                    <MenuItem value="DISCUSSION">DISCUSSION</MenuItem>
-                    <MenuItem value="ACCEPTED">ACCEPTED</MenuItem>
-                    <MenuItem value="REJECTED">REJECTED</MenuItem>
+                    <MenuItem value={paper.status}>{paper.status}</MenuItem>
+                    {(STATUS_TRANSITIONS[paper.status] || []).map((s: string) => (
+                      <MenuItem key={s} value={s}>{s}</MenuItem>
+                    ))}
                   </Select>
                 </TableCell>
               </TableRow>

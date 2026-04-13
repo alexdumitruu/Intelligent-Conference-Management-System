@@ -7,19 +7,24 @@ export default function ConferenceSelection() {
   const navigate = useNavigate();
   const [conferences, setConferences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [canCreate, setCanCreate] = useState(false);
 
   useEffect(() => {
-    async function loadConferences() {
+    async function load() {
       try {
-        const response = await api.get('/conferences');
-        setConferences(response.data);
+        const [confRes, chairRes] = await Promise.all([
+          api.get('/conferences'),
+          api.get('/conferences/my-chair-status'),
+        ]);
+        setConferences(confRes.data);
+        setCanCreate(chairRes.data.isChair || confRes.data.length === 0);
       } catch (error) {
         console.error('Failed to load conferences', error);
       } finally {
         setLoading(false);
       }
     }
-    loadConferences();
+    load();
   }, []);
 
   return (
@@ -30,18 +35,22 @@ export default function ConferenceSelection() {
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ mt: 4 }}>
+        {canCreate && (
+          <Box display="flex" justifyContent="flex-end" mb={3}>
+            <Button variant="contained" color="primary" onClick={() => navigate('/admin/conferences/new')}>
+              + Create Conference
+            </Button>
+          </Box>
+        )}
         {loading ? (
           <Stack alignItems="center" mt={10}>
             <CircularProgress />
           </Stack>
         ) : conferences.length === 0 ? (
           <Box textAlign="center" mt={10}>
-            <Typography variant="h5" color="text.secondary" gutterBottom>
-              No conferences available.
+            <Typography variant="h5" color="text.secondary">
+              No conferences available yet.
             </Typography>
-            <Button variant="contained" color="primary" onClick={() => navigate('/admin/conferences/new')}>
-              Create Conference
-            </Button>
           </Box>
         ) : (
           <Grid container spacing={3}>
@@ -52,9 +61,9 @@ export default function ConferenceSelection() {
                   onClick={() => navigate(`/conferences/${conf.id}/dashboard`)}
                 >
                   <CardContent>
-                    <Typography variant="h6">{conf.name || `Conference #${conf.id}`}</Typography>
+                    <Typography variant="h6">{conf.title || `Conference #${conf.id}`}</Typography>
                     <Typography color="text.secondary" sx={{ mt: 1 }}>
-                      {conf.theme || 'Click to view details'}
+                      {conf.description || conf.acronym || 'Click to view details'}
                     </Typography>
                   </CardContent>
                 </Card>

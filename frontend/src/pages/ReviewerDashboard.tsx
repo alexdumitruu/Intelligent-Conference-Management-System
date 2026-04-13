@@ -29,10 +29,10 @@ export default function ReviewerDashboard() {
       setLoading(true);
       try {
         if (tabIndex === 0) {
-          const res = await api.get(`/conferences/${id}/bidding-papers`);
+          const res = await api.get(`/conferences/${id}/matching/papers`);
           setBiddingPapers(res.data);
         } else {
-          const res = await api.get(`/conferences/${id}/assigned-papers`);
+          const res = await api.get(`/conferences/${id}/matching/assigned-papers`);
           setAssignedPapers(res.data);
         }
       } catch (error) {
@@ -50,7 +50,7 @@ export default function ReviewerDashboard() {
   async function handleBidChange(paperId: number, newBid: string | null) {
     if (!newBid) return;
     try {
-      await api.post(`/conferences/${id}/bids`, { paperId, bidType: newBid });
+      await api.post(`/conferences/${id}/matching/bids`, { paperId, bidType: newBid });
       setSnackbar({ open: true, message: 'Bid successfully saved!', severity: 'success' });
     } catch (error) {
       console.error('Failed to save bid', error);
@@ -61,7 +61,7 @@ export default function ReviewerDashboard() {
   async function handleConflictSubmit() {
     if (!conflictReason.trim()) return;
     try {
-      await api.post(`/conferences/${id}/conflicts`, { paperId: selectedPaperId, reason: conflictReason });
+      await api.post(`/conferences/${id}/matching/conflicts`, { paperId: selectedPaperId, reason: conflictReason });
       setSnackbar({ open: true, message: 'Conflict explicitly declared.', severity: 'success' });
       setConflictDialogOpen(false);
       setConflictReason('');
@@ -73,7 +73,7 @@ export default function ReviewerDashboard() {
 
   async function handleRetractConflict(paperId: number) {
     try {
-      await api.delete(`/conferences/${id}/conflicts/${paperId}`);
+      await api.delete(`/conferences/${id}/matching/conflicts/${paperId}`);
       setSnackbar({ open: true, message: 'Conflict retracted successfully.', severity: 'success' });
     } catch (error: any) {
       console.error('Failed to retract conflict', error);

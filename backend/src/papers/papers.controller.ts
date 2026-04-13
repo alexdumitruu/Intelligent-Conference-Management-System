@@ -37,15 +37,25 @@ export class PapersController {
     return this.papersService.findAll(conferenceId);
   }
 
+  @Get('mine')
+  async getMyPapers(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+    @Req() req: any,
+  ) {
+    return this.papersService.findByAuthor(conferenceId, req.user.userId);
+  }
+
   @Post()
   async createDraft(
     @Param('conferenceId', ParseIntPipe) conferenceId: number,
     @Body() body: { title: string; abstract: string; keywords?: string[]; topics?: string[] },
+    @Req() req: any,
   ) {
     return this.papersService.createPaper(
       body.title,
       body.abstract,
       conferenceId,
+      req.user.userId,
       body.keywords,
       body.topics
     );

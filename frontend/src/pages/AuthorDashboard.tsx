@@ -22,6 +22,7 @@ export default function AuthorDashboard() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [customTitle, setCustomTitle] = useState('');
+  const [customAbstract, setCustomAbstract] = useState('');
   const [keywords, setKeywords] = useState('');
   const [topics, setTopics] = useState('');
 
@@ -37,7 +38,7 @@ export default function AuthorDashboard() {
   async function loadMyPapers() {
     setIsLoading(true);
     try {
-      const res = await api.get(`/conferences/${id}/papers`);
+      const res = await api.get(`/conferences/${id}/papers/mine`);
       // Note: If backend endpoint returns all papers globally, filtering might be required.
       // Expected to only return papers authored by the user making the request.
       setPapers(res.data);
@@ -58,7 +59,7 @@ export default function AuthorDashboard() {
       const paperRes = await api.post(`/conferences/${id}/papers`, 
         { 
           title: customTitle.trim() || file.name, 
-          abstract: 'Uploaded via frontend',
+          abstract: customAbstract.trim() || 'No abstract provided',
           keywords: keywordArray,
           topics: topicArray
         }
@@ -201,6 +202,17 @@ export default function AuthorDashboard() {
                 onChange={(e) => setCustomTitle(e.target.value)}
                 sx={{ mb: 3, mt: 1 }}
                 helperText="If left blank, the uploaded PDF filename will be used as the title."
+              />
+              <TextField
+                fullWidth
+                label="Abstract"
+                variant="outlined"
+                multiline
+                rows={4}
+                value={customAbstract}
+                onChange={(e) => setCustomAbstract(e.target.value)}
+                sx={{ mb: 3 }}
+                helperText="Provide a brief summary of your paper."
               />
               <TextField
                 fullWidth

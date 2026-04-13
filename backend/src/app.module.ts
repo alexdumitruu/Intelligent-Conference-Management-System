@@ -27,7 +27,7 @@ import { Conference } from './conferences/entities/conference.entity';
         password: configService.getOrThrow<string>('DB_PASSWORD'),
         database: configService.getOrThrow<string>('DB_NAME'),
         autoLoadModels: true,
-        synchronize: true,
+        synchronize: false,
       }),
     }),
     AuthModule,

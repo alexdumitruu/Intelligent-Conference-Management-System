@@ -45,10 +45,11 @@ export class PapersService {
     title: string,
     abstract: string,
     conferenceId: number,
+    userId: number,
     keywords?: string[],
     topics?: string[]
   ): Promise<Paper> {
-    return this.paperModel.create({
+    const paper = await this.paperModel.create({
       title,
       abstract,
       conferenceId,
@@ -58,6 +59,8 @@ export class PapersService {
       pdfPath: null,
       extractedText: null,
     });
+    await PaperAuthor.create({ paperId: paper.id, userId, authorOrder: 1 });
+    return paper;
   }
 
   async processSubmission(
@@ -73,6 +76,10 @@ export class PapersService {
       throw new BadRequestException(
         'Paper must be in DRAFT status to be submitted',
       );
+    }
+    const conference = await Conference.findByPk(paper.conferenceId);
+    if (conference) {
+      this.checkDeadlineConstraint(conference.submissionDeadline);
     }
     const pdfPath = file.path;
     const extractedText = await this.extractTextFromPdf(pdfPath);
@@ -342,5 +349,12 @@ export class PapersService {
       ],
       order: [['id', 'ASC']],
     });
+  }
+
+  async findByAuthor(conferenceId: number, userId: number): Promise<Paper[]> {
+    const authorRecords = await PaperAuthor.findAll({ where: { userId } });
+    const paperIds = authorRecords.map(a => a.paperId);
+    if (paperIds.length === 0) return [];
+    return this.paperModel.findAll({ where: { conferenceId, id: paperIds } });
   }
 }

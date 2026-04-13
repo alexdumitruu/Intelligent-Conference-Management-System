@@ -15,8 +15,9 @@ export default function Register() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/auth/register', { email, password, firstName, lastName });
-      navigate('/login');
+      const res = await api.post('/auth/register', { email, password, firstName, lastName });
+      localStorage.setItem('accessToken', res.data.accessToken);
+      navigate('/conferences');
     } catch (error: any) {
       setError(error.response?.data?.message || 'Registration failed. Please try again.');
     }

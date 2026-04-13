@@ -33,6 +33,12 @@ export default function DashboardLayout({
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
+          <Button color="inherit" onClick={() => navigate('/conferences')}>
+            Conferences
+          </Button>
+          <Button color="inherit" onClick={() => navigate('/profile')}>
+            Profile
+          </Button>
           <Button
             color="inherit"
             startIcon={<LogoutIcon />}

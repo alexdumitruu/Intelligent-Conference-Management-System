@@ -28,7 +28,7 @@ import { Conference } from './entities/conference.entity';
 import { Review } from '../reviews/entities/review.entity';
 import { PapersService } from '../papers/papers.service';
 import { CreateConflictDto } from '../matching/dto/create-conflict.dto';
-
+import { ConferenceRole } from './entities/conference-role.entity';
 import { ConferencesService } from './conferences.service';
 
 @Controller('conferences')
@@ -45,9 +45,17 @@ export class ConferencesController {
     return this.conferencesService.getAllConferences();
   }
 
+  @Get('my-chair-status')
+  async getChairStatus(@Req() req: any) {
+    const count = await ConferenceRole.count({
+      where: { userId: req.user.userId, roleType: ConferenceRoleType.CHAIR },
+    });
+    return { isChair: count > 0 };
+  }
+
   @Post()
-  async createConference(@Body() data: any) {
-    return this.conferencesService.createConference(data);
+  async createConference(@Body() data: any, @Req() req: any) {
+    return this.conferencesService.createConference(data, req.user.userId);
   }
 
   @Post(':conferenceId/roles')
@@ -57,7 +65,11 @@ export class ConferencesController {
     @Param('conferenceId', ParseIntPipe) conferenceId: number,
     @Body() body: { email: string; roleType: string },
   ) {
-    return this.conferencesService.assignRoleByEmail(conferenceId, body.email, body.roleType);
+    return this.conferencesService.assignRoleByEmail(
+      conferenceId,
+      body.email,
+      body.roleType,
+    );
   }
 
   @Get(':id/my-role')
@@ -65,27 +77,10 @@ export class ConferencesController {
     @Param('id', ParseIntPipe) conferenceId: number,
     @Req() req: any,
   ) {
-    return this.conferencesService.getMyRoleForConference(conferenceId, req.user.userId);
-  }
-
-  @Get(':conferenceId/bidding-papers')
-  @UseGuards(ConferenceRoleGuard)
-  @Roles(ConferenceRoleType.REVIEWER)
-  async getBiddingPapers(
-    @Param('conferenceId', ParseIntPipe) conferenceId: number,
-    @Req() req: any,
-  ) {
-    const papers = await Paper.findAll({
-      where: {
-        conferenceId: conferenceId,
-        status: PaperStatus.BIDDING,
-      },
-      attributes: ['id', 'title', 'abstract'],
-    });
-    if (papers.length === 0) {
-      throw new NotFoundException('No papers found for this conference');
-    }
-    return papers;
+    return this.conferencesService.getMyRoleForConference(
+      conferenceId,
+      req.user.userId,
+    );
   }
 
   @Get(':conferenceId/assigned-papers')
@@ -107,30 +102,6 @@ export class ConferencesController {
     });
 
     return reviews.map((r) => r.paper);
-  }
-
-  @Post(':conferenceId/bids')
-  @UseGuards(ConferenceRoleGuard)
-  @Roles(ConferenceRoleType.REVIEWER)
-  async submitBid(
-    @Param('conferenceId', ParseIntPipe) conferenceId: number,
-    @Body() createBidDto: CreateBidDto,
-    @Req() req: any,
-  ) {
-    const userId = req.user.userId;
-    const newBid = new Bid({
-      paperId: createBidDto.paperId,
-      userId: userId,
-      bidType: createBidDto.bidType,
-    });
-    const existingBid = await Bid.findOne({
-      where: { paperId: createBidDto.paperId, userId },
-    });
-    if (existingBid) {
-      await existingBid.destroy();
-    }
-    await newBid.save();
-    return newBid;
   }
 
   @Post(':conferenceId/auto-assign')
@@ -161,38 +132,6 @@ export class ConferencesController {
     }
   }
 
-  @Post(':conferenceId/conflicts')
-  @UseGuards(ConferenceRoleGuard)
-  @Roles(ConferenceRoleType.REVIEWER)
-  async declareConflict(
-    @Param('conferenceId', ParseIntPipe) conferenceId: number,
-    @Body() dto: CreateConflictDto,
-    @Req() req: any,
-  ) {
-    const userId = req.user.userId;
-
-    const paper = await Paper.findByPk(dto.paperId);
-    if (!paper || paper.conferenceId !== conferenceId) {
-      throw new NotFoundException('Paper not found in this conference');
-    }
-
-    const existing = await Conflict.findOne({
-      where: { paperId: dto.paperId, userId },
-    });
-    if (existing) {
-      throw new BadRequestException(
-        'You have already declared a conflict for this paper',
-      );
-    }
-
-    const conflict = await Conflict.create({
-      paperId: dto.paperId,
-      userId,
-      reason: dto.reason,
-    });
-    return conflict;
-  }
-
   @Get(':conferenceId/conflicts')
   @UseGuards(ConferenceRoleGuard)
   @Roles(ConferenceRoleType.CHAIR)
@@ -208,23 +147,5 @@ export class ConferencesController {
     return Conflict.findAll({
       where: { paperId: paperIds },
     });
-  }
-
-  @Delete(':conferenceId/conflicts/:paperId')
-  @UseGuards(ConferenceRoleGuard)
-  @Roles(ConferenceRoleType.REVIEWER)
-  async retractConflict(
-    @Param('conferenceId', ParseIntPipe) conferenceId: number,
-    @Param('paperId', ParseIntPipe) paperId: number,
-    @Req() req: any,
-  ) {
-    const conflict = await Conflict.findOne({
-      where: { paperId, userId: req.user.userId },
-    });
-    if (!conflict) {
-      throw new NotFoundException('Conflict declaration not found');
-    }
-    await conflict.destroy();
-    return { message: 'Conflict declaration retracted' };
   }
 }

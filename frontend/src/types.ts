@@ -5,6 +5,9 @@ export interface Paper {
   status: string;
   pdfPath: string | null;
   conferenceId: number;
+  keywords?: string[];
+  topics?: string[];
+  rebuttalText?: string;
   createdAt: string;
   updatedAt: string;
 }

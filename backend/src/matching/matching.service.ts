@@ -393,4 +393,30 @@ export class MatchingService {
 
     return conflict;
   }
+
+  async retractConflict(conferenceId: number, userId: number, paperId: number): Promise<void> {
+    const paper = await this.paperModel.findByPk(paperId);
+    if (!paper || paper.conferenceId !== conferenceId) {
+      throw new NotFoundException('Paper not found in this conference');
+    }
+    const conflict = await this.conflictModel.findOne({
+      where: { paperId, userId },
+    });
+    if (!conflict) {
+      throw new NotFoundException('Conflict declaration not found');
+    }
+    await conflict.destroy();
+  }
+
+  async getAssignedPapers(conferenceId: number, userId: number): Promise<Paper[]> {
+    const reviews = await this.reviewModel.findAll({
+      where: { userId },
+      include: [{
+        model: Paper,
+        where: { conferenceId },
+        attributes: ['id', 'title', 'abstract'],
+      }],
+    });
+    return reviews.map(r => r.paper);
+  }
 }
