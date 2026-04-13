@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 
 interface ProtectedRouteProps {
-  requiredRole: string;
+  requiredRole?: string;
 }
 
 export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
@@ -12,7 +12,7 @@ export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (role !== requiredRole) {
+  if (requiredRole && role !== requiredRole) {
     return <Navigate to="/login" replace />;
   }
 

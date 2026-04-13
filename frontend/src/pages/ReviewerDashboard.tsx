@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
-  Box, Card, CardContent, Typography, Tabs, Tab, Table, TableBody,
+  Box, Tabs, Tab, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, ToggleButton,
   ToggleButtonGroup, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Snackbar, Alert, Stack, CircularProgress
+  DialogActions, TextField, Snackbar, Alert
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import api from '../api';
@@ -71,6 +71,33 @@ export default function ReviewerDashboard() {
     }
   }
 
+  async function handleRetractConflict(paperId: number) {
+    try {
+      await api.delete(`/conferences/${id}/conflicts/${paperId}`);
+      setSnackbar({ open: true, message: 'Conflict retracted successfully.', severity: 'success' });
+    } catch (error: any) {
+      console.error('Failed to retract conflict', error);
+      setSnackbar({ open: true, message: error.response?.data?.message || 'Failed to retract conflict.', severity: 'error' });
+    }
+  }
+
+  async function handleDownloadPdf(paperId: number) {
+    try {
+      const response = await api.get(`/conferences/${id}/papers/${paperId}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `paper-${paperId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed', error);
+      setSnackbar({ open: true, message: 'Failed to securely download PDF.', severity: 'error' });
+    }
+  }
+
   return (
     <Box>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
@@ -111,12 +138,22 @@ export default function ReviewerDashboard() {
                     <Button 
                       color="error" 
                       variant="outlined"
+                      size="small"
+                      sx={{ mr: 1 }}
                       onClick={() => {
                         setSelectedPaperId(paper.id);
                         setConflictDialogOpen(true);
                       }}
                     >
                       Declare
+                    </Button>
+                    <Button
+                      color="secondary"
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleRetractConflict(paper.id)}
+                    >
+                      Retract
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -141,7 +178,16 @@ export default function ReviewerDashboard() {
                   <TableCell>{paper.title}</TableCell>
                   <TableCell align="center">
                     <Button 
+                      variant="outlined"
+                      size="small"
+                      sx={{ mr: 1 }}
+                      onClick={() => handleDownloadPdf(paper.id)}
+                    >
+                      Download PDF
+                    </Button>
+                    <Button 
                       variant="contained"
+                      size="small"
                       onClick={() => {
                         setSelectedPaperId(paper.id);
                         setReviewDialogOpen(true);

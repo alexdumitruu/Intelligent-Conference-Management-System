@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Grid, Typography, CircularProgress, AppBar, Toolbar, Container, Stack } from '@mui/material';
+import { Box, Card, CardContent, Grid, Typography, CircularProgress, AppBar, Toolbar, Container, Stack, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -34,6 +34,15 @@ export default function ConferenceSelection() {
           <Stack alignItems="center" mt={10}>
             <CircularProgress />
           </Stack>
+        ) : conferences.length === 0 ? (
+          <Box textAlign="center" mt={10}>
+            <Typography variant="h5" color="text.secondary" gutterBottom>
+              No conferences available.
+            </Typography>
+            <Button variant="contained" color="primary" onClick={() => navigate('/admin/conferences/new')}>
+              Create Conference
+            </Button>
+          </Box>
         ) : (
           <Grid container spacing={3}>
             {conferences.map((conf) => (

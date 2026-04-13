@@ -16,6 +16,10 @@ export class ConferencesService {
     return this.conferenceModel.findAll();
   }
 
+  async createConference(data: any) {
+    return this.conferenceModel.create(data);
+  }
+
   async getMyRoleForConference(conferenceId: number, userId: number) {
     const role = await this.conferenceRoleModel.findOne({
       where: { conferenceId, userId },
@@ -25,4 +29,10 @@ export class ConferencesService {
     }
     return { role: role.roleType };
   }
+
+  async assignRoleByEmail(
+    conferenceId: number,
+    email: string,
+    roleType: string,
+  ) {}
 }

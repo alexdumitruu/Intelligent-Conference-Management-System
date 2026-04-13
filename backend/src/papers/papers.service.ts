@@ -45,11 +45,15 @@ export class PapersService {
     title: string,
     abstract: string,
     conferenceId: number,
+    keywords?: string[],
+    topics?: string[]
   ): Promise<Paper> {
     return this.paperModel.create({
       title,
       abstract,
       conferenceId,
+      keywords,
+      topics,
       status: PaperStatus.DRAFT,
       pdfPath: null,
       extractedText: null,
@@ -326,6 +330,13 @@ export class PapersService {
             'verifiedCitations',
             'flaggedErrors',
             'extractionMethod',
+          ],
+        },
+        {
+          model: PaperHistory,
+          attributes: ['id', 'previousState', 'newState', 'timestamp'],
+          include: [
+            { model: User, attributes: ['id', 'firstName', 'lastName'] },
           ],
         },
       ],

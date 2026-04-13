@@ -40,12 +40,14 @@ export class PapersController {
   @Post()
   async createDraft(
     @Param('conferenceId', ParseIntPipe) conferenceId: number,
-    @Body() body: { title: string; abstract: string },
+    @Body() body: { title: string; abstract: string; keywords?: string[]; topics?: string[] },
   ) {
     return this.papersService.createPaper(
       body.title,
       body.abstract,
       conferenceId,
+      body.keywords,
+      body.topics
     );
   }
 

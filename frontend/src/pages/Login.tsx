@@ -73,6 +73,15 @@ export default function Login() {
             >
               Login
             </Button>
+            <Button
+              variant="outlined"
+              size="large"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={() => navigate('/register')}
+            >
+              Register
+            </Button>
           </form>
         </CardContent>
       </Card>

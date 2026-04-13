@@ -45,6 +45,21 @@ export class ConferencesController {
     return this.conferencesService.getAllConferences();
   }
 
+  @Post()
+  async createConference(@Body() data: any) {
+    return this.conferencesService.createConference(data);
+  }
+
+  @Post(':conferenceId/roles')
+  @UseGuards(ConferenceRoleGuard)
+  @Roles(ConferenceRoleType.CHAIR)
+  async assignRole(
+    @Param('conferenceId', ParseIntPipe) conferenceId: number,
+    @Body() body: { email: string; roleType: string },
+  ) {
+    return this.conferencesService.assignRoleByEmail(conferenceId, body.email, body.roleType);
+  }
+
   @Get(':id/my-role')
   async getMyRoleForConference(
     @Param('id', ParseIntPipe) conferenceId: number,
