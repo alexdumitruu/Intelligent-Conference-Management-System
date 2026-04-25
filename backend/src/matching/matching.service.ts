@@ -133,6 +133,9 @@ export class MatchingService {
       'outlook.com',
       'protonmail.com',
       'icloud.com',
+      'test.com',
+      'example.com',
+      'localhost',
     ]);
 
     const getDomain = (email: string): string => {
@@ -159,6 +162,7 @@ export class MatchingService {
         if (!reviewerDomain || genericDomains.has(reviewerDomain)) continue;
 
         for (const authorDomain of authorDomains) {
+          if (!authorDomain || genericDomains.has(authorDomain)) continue;
           if (authorDomain === reviewerDomain) {
             conflictSet.add(`${paper.id}-${role.userId}`);
             break;
@@ -456,10 +460,13 @@ export class MatchingService {
         {
           model: Paper,
           where: { conferenceId },
-          attributes: ['id', 'title', 'abstract'],
+          attributes: ['id', 'title', 'abstract', 'status', 'rebuttalText'],
         },
       ],
     });
-    return reviews.map((r) => r.paper);
+    return reviews.map((r) => {
+      const p = r.paper.toJSON();
+      return { ...p, currentUserReview: { score: r.score } } as Paper;
+    });
   }
 }

@@ -5,7 +5,7 @@ import {
   Alert, Stack, TextField, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, Chip,
-  Autocomplete, Avatar, Tooltip
+  Autocomplete, Avatar, Tooltip, Rating, Snackbar
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -42,10 +42,18 @@ export default function AuthorDashboard() {
   const [coAuthorResults, setCoAuthorResults] = useState<CoAuthor[]>([]);
   const [coAuthorSearchLoading, setCoAuthorSearchLoading] = useState(false);
 
+  // Reviews State
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [reviewsData, setReviewsData] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
   // Rebuttal State
   const [rebuttalOpen, setRebuttalOpen] = useState(false);
   const [activePaperId, setActivePaperId] = useState<number | null>(null);
   const [rebuttalText, setRebuttalText] = useState('');
+  
+  // UI State
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     if (id) loadMyPapers();
@@ -168,10 +176,19 @@ export default function AuthorDashboard() {
       await api.post(`/conferences/${id}/papers/${activePaperId}/rebuttal`, { rebuttalText });
       setRebuttalOpen(false);
       setRebuttalText('');
+      setSnackbar({
+        open: true,
+        message: 'Thank you for your rebuttal. The committee will review it and notify you of the final decision shortly.',
+        severity: 'success'
+      });
       loadMyPapers(); // Refresh status after rebuttal
     } catch (err) {
       console.error('Failed to submit rebuttal', err);
-      alert('Failed to submit rebuttal');
+      setSnackbar({
+        open: true,
+        message: 'Failed to submit rebuttal. Please try again later.',
+        severity: 'error'
+      });
     }
   }
 
@@ -182,6 +199,19 @@ export default function AuthorDashboard() {
       case 'REJECTED': return 'error';
       case 'UNDER_REVIEW': return 'info';
       default: return 'default';
+    }
+  }
+
+  async function handleViewReviews(paperId: number) {
+    setReviewsLoading(true);
+    setReviewsOpen(true);
+    try {
+      const res = await api.get(`/reviews/${paperId}/author`);
+      setReviewsData(res.data);
+    } catch {
+      setReviewsData([]);
+    } finally {
+      setReviewsLoading(false);
     }
   }
 
@@ -236,7 +266,7 @@ export default function AuthorDashboard() {
                     <Chip label={p.status} color={getStatusColor(p.status) as any} size="small" />
                   </TableCell>
                   <TableCell align="center">
-                    {p.status === 'DISCUSSION' && (
+                    {p.status === 'DISCUSSION' && !p.rebuttalText && (
                       <Button 
                         size="small" 
                         variant="outlined" 
@@ -249,6 +279,14 @@ export default function AuthorDashboard() {
                         Submit Rebuttal
                       </Button>
                     )}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => handleViewReviews(p.id)}
+                      sx={{ ml: 1 }}
+                    >
+                      View Reviews
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -379,6 +417,11 @@ export default function AuthorDashboard() {
                 </Stack>
               )}
 
+
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <strong>Double-Blind Conference:</strong> You must remove your name and affiliation from the PDF before uploading.
+              </Alert>
+
               <Box
                 {...getRootProps()}
                 sx={{
@@ -431,6 +474,54 @@ export default function AuthorDashboard() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Reviews Dialog */}
+      <Dialog open={reviewsOpen} onClose={() => setReviewsOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Reviews</DialogTitle>
+        <DialogContent dividers>
+          {reviewsLoading ? (
+            <Box textAlign="center" py={3}><CircularProgress /></Box>
+          ) : reviewsData.length === 0 ? (
+            <Typography color="text.secondary">No reviews submitted yet.</Typography>
+          ) : (
+            <Stack spacing={3}>
+              {reviewsData.map((r: any, i: number) => (
+                <Box key={r.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" gutterBottom>Reviewer {i + 1}</Typography>
+                  <Stack direction="row" spacing={3} mb={1}>
+                    <Box>
+                      <Typography variant="caption">Score</Typography>
+                      <Rating value={r.score} max={10} readOnly size="small" />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption">Confidence</Typography>
+                      <Rating value={r.confidence} max={5} readOnly size="small" />
+                    </Box>
+                  </Stack>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {r.contentAuthors || 'No comments.'}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReviewsOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Global Snackbar */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={snackbar.severity as 'success' | 'error'} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

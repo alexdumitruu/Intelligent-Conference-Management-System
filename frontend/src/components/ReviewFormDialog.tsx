@@ -8,16 +8,24 @@ import api from '../api';
 interface ReviewFormDialogProps {
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   paperId: number | null;
   conferenceId: number | string | undefined;
 }
 
-export default function ReviewFormDialog({ open, onClose, paperId, conferenceId }: ReviewFormDialogProps) {
+export default function ReviewFormDialog({ open, onClose, onSuccess, paperId, conferenceId }: ReviewFormDialogProps) {
   const [score, setScore] = useState<number | null>(null);
   const [confidence, setConfidence] = useState<number | null>(null);
   const [contentAuthor, setContentAuthor] = useState('');
   const [contentChair, setContentChair] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function resetForm() {
+    setScore(null);
+    setConfidence(null);
+    setContentAuthor('');
+    setContentChair('');
+  }
 
   async function handleSubmit() {
     if (!score || !confidence) return;
@@ -29,10 +37,13 @@ export default function ReviewFormDialog({ open, onClose, paperId, conferenceId 
         contentAuthor,
         contentChair
       });
+      resetForm();
+      if (onSuccess) onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit review', error);
-      alert('Failed to submit review. Try again.');
+      const msg = error.response?.data?.message || 'Failed to submit review. Try again.';
+      alert(msg);
     } finally {
       setIsSubmitting(false);
     }

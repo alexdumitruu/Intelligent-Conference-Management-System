@@ -9,6 +9,7 @@ import { Review } from './entities/review.entity';
 import { Paper } from '../papers/entities/paper.entity';
 import { PaperStatus } from '../papers/entities/paper-history.entity';
 import { SubmitReviewDto } from './dto/submit-review.dto';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class ReviewsService {
@@ -54,5 +55,28 @@ export class ReviewsService {
     existingAssignment.contentChair = dto.contentChair;
     await existingAssignment.save();
     return existingAssignment;
+  }
+
+  async getReviewsForAuthor(paperId: number, userId: number) {
+    const paper = await this.paperModel.findByPk(paperId);
+    if (!paper) throw new NotFoundException(`Paper not found`);
+
+    const reviews = await this.reviewModel.findAll({
+      where: { paperId },
+      attributes: ['id', 'score', 'confidence', 'contentAuthors', 'createdAt'],
+    });
+    return reviews.filter(r => r.score > 0);
+  }
+
+  async getReviewsForChair(paperId: number, userId: number) {
+    const paper = await this.paperModel.findByPk(paperId);
+    if (!paper) throw new NotFoundException(`Paper not found`);
+
+    const reviews = await this.reviewModel.findAll({
+      where: { paperId },
+      attributes: ['id', 'userId', 'score', 'confidence', 'contentAuthors', 'contentChair', 'createdAt'],
+      include: [{ model: User, attributes: ['id', 'firstName', 'lastName'] }],
+    });
+    return reviews;
   }
 }

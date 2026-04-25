@@ -116,6 +116,21 @@ export class PapersController {
     );
   }
 
+  @Patch(':paperId/force-status')
+  @UseGuards(ConferenceRoleGuard)
+  @Roles(ConferenceRoleType.CHAIR)
+  async forceStatus(
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Body() body: { targetStatus: PaperStatus },
+    @Req() req: any,
+  ) {
+    return this.papersService.forceSetStatus(
+      paperId,
+      body.targetStatus,
+      req.user.userId,
+    );
+  }
+
   @Get('master-table')
   @UseGuards(ConferenceRoleGuard)
   @Roles(ConferenceRoleType.CHAIR)

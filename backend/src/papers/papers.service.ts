@@ -208,6 +208,28 @@ export class PapersService {
     return paper;
   }
 
+  async forceSetStatus(
+    paperId: number,
+    targetStatus: PaperStatus,
+    userId: number,
+  ): Promise<Paper> {
+    const paper = await this.paperModel.findByPk(paperId);
+    if (!paper) {
+      throw new NotFoundException(`Paper with ID ${paperId} not found`);
+    }
+    const previousStatus = paper.status;
+    paper.status = targetStatus;
+    await paper.save();
+    await this.paperHistoryModel.create({
+      paperId,
+      userId,
+      previousState: previousStatus,
+      newState: targetStatus,
+      timestamp: new Date(),
+    });
+    return paper;
+  }
+
   checkDeadlineConstraint(deadline: Date): void {
     if (new Date() > new Date(deadline)) {
       throw new BadRequestException('The deadline for this action has passed');

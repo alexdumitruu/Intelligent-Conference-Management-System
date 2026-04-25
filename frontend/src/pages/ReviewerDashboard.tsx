@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box, Tabs, Tab, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, ToggleButton,
   ToggleButtonGroup, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Snackbar, Alert
+  DialogActions, TextField, Snackbar, Alert, Typography
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import api from '../api';
@@ -24,28 +24,32 @@ export default function ReviewerDashboard() {
 
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
-  useEffect(() => {
-    async function loadPapers() {
-      setLoading(true);
-      try {
-        if (tabIndex === 0) {
-          const res = await api.get(`/conferences/${id}/matching/papers`);
-          setBiddingPapers(res.data);
-        } else {
-          const res = await api.get(`/conferences/${id}/matching/assigned-papers`);
-          setAssignedPapers(res.data);
-        }
-      } catch (error) {
-        console.error('Failed to load papers', error);
-        setSnackbar({ open: true, message: 'Failed to load papers', severity: 'error' });
-      } finally {
-        setLoading(false);
+  const [rebuttalDialogOpen, setRebuttalDialogOpen] = useState(false);
+  const [activeRebuttalText, setActiveRebuttalText] = useState('');
+
+  const loadPapers = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (tabIndex === 1) {
+        const res = await api.get(`/conferences/${id}/matching/papers`);
+        setBiddingPapers(res.data);
+      } else {
+        const res = await api.get(`/conferences/${id}/matching/assigned-papers`);
+        setAssignedPapers(res.data);
       }
+    } catch (error) {
+      console.error('Failed to load papers', error);
+      setSnackbar({ open: true, message: 'Failed to load papers', severity: 'error' });
+    } finally {
+      setLoading(false);
     }
+  }, [id, tabIndex]);
+
+  useEffect(() => {
     if (id) {
       loadPapers();
     }
-  }, [id, tabIndex]);
+  }, [id, loadPapers]);
 
   async function handleBidChange(paperId: number, newBid: string | null) {
     if (!newBid) return;
@@ -102,12 +106,12 @@ export default function ReviewerDashboard() {
     <Box>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tabIndex} onChange={(_, nv) => setTabIndex(nv)}>
-          <Tab label="Bidding & Conflicts" />
           <Tab label="My Assigned Reviews" />
+          <Tab label="Bidding & Conflicts" />
         </Tabs>
       </Box>
 
-      {tabIndex === 0 && (
+      {tabIndex === 1 && (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -163,7 +167,7 @@ export default function ReviewerDashboard() {
         </TableContainer>
       )}
 
-      {tabIndex === 1 && (
+      {tabIndex === 0 && (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -185,16 +189,32 @@ export default function ReviewerDashboard() {
                     >
                       Download PDF
                     </Button>
-                    <Button 
-                      variant="contained"
-                      size="small"
-                      onClick={() => {
-                        setSelectedPaperId(paper.id);
-                        setReviewDialogOpen(true);
-                      }}
-                    >
-                      Submit Review
-                    </Button>
+                    {(!paper.currentUserReview || paper.currentUserReview.score === 0) && paper.status === 'UNDER_REVIEW' && (
+                      <Button 
+                        variant="contained"
+                        size="small"
+                        onClick={() => {
+                          setSelectedPaperId(paper.id);
+                          setReviewDialogOpen(true);
+                        }}
+                      >
+                        Submit Review
+                      </Button>
+                    )}
+                    {['DISCUSSION', 'ACCEPTED', 'REJECTED'].includes(paper.status) && paper.rebuttalText && (
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        size="small"
+                        sx={{ ml: 1 }}
+                        onClick={() => {
+                          setActiveRebuttalText(paper.rebuttalText);
+                          setRebuttalDialogOpen(true);
+                        }}
+                      >
+                        View Rebuttal
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -227,9 +247,25 @@ export default function ReviewerDashboard() {
       <ReviewFormDialog 
         open={reviewDialogOpen} 
         onClose={() => setReviewDialogOpen(false)} 
+        onSuccess={() => {
+          loadPapers();
+          setSnackbar({ open: true, message: 'Thank you for reviewing, await rebuttal', severity: 'success' });
+        }}
         paperId={selectedPaperId} 
         conferenceId={id} 
       />
+
+      <Dialog open={rebuttalDialogOpen} onClose={() => setRebuttalDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Author Rebuttal</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+            {activeRebuttalText}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRebuttalDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar 
         open={snackbar.open} 

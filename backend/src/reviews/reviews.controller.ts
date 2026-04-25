@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Param,
   Body,
@@ -27,5 +28,21 @@ export class ReviewsController {
       req.user.userId,
       submitReviewDto,
     );
+  }
+
+  @Get(':paperId/author')
+  async getReviewsForAuthor(
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Req() req: any,
+  ) {
+    return this.reviewsService.getReviewsForAuthor(paperId, req.user.userId);
+  }
+
+  @Get(':paperId/chair')
+  async getReviewsForChair(
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Req() req: any,
+  ) {
+    return this.reviewsService.getReviewsForChair(paperId, req.user.userId);
   }
 }

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import {
   Box, Typography, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper,
-  Button, Select, MenuItem, Chip, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions
+  Button, Select, MenuItem, Chip, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions,
+  CircularProgress, Rating
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import api from '../api';
@@ -19,6 +20,8 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   REJECTED: [],
 };
 
+const ALL_STATUSES = ['DRAFT', 'SUBMITTED', 'BIDDING', 'UNDER_REVIEW', 'DISCUSSION', 'ACCEPTED', 'REJECTED'];
+
 export default function ChairDashboard() {
   const { id } = useParams<{ id: string }>();
   const [masterDatas, setMasterDatas] = useState<any[]>([]);
@@ -30,6 +33,11 @@ export default function ChairDashboard() {
   const [activePaperId, setActivePaperId] = useState<number | null>(null);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [activeHistory, setActiveHistory] = useState<any[]>([]);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [reviewsData, setReviewsData] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [rebuttalDialogOpen, setRebuttalDialogOpen] = useState(false);
+  const [activeRebuttalText, setActiveRebuttalText] = useState('');
 
   async function loadMasterTable() {
     setLoading(true);
@@ -63,21 +71,43 @@ export default function ChairDashboard() {
     }
   }
 
-  async function handleStatusChange(paperId: number, targetStatus: string) {
+  async function handleStatusChange(paperId: number, currentStatus: string, targetStatus: string) {
     try {
+      const isForwardTransition = (STATUS_TRANSITIONS[currentStatus] || []).includes(targetStatus);
+
       if (targetStatus === 'ACCEPTED' || targetStatus === 'REJECTED') {
-        await api.post(`/conferences/${id}/papers/${paperId}/decision`, { decision: targetStatus });
-      } else {
+        if (isForwardTransition) {
+          await api.post(`/conferences/${id}/papers/${paperId}/decision`, { decision: targetStatus });
+        } else {
+          await api.patch(`/conferences/${id}/papers/${paperId}/force-status`, { targetStatus });
+        }
+      } else if (isForwardTransition) {
         await api.patch(`/conferences/${id}/papers/${paperId}/status`, { targetStatus });
+      } else {
+        await api.patch(`/conferences/${id}/papers/${paperId}/force-status`, { targetStatus });
       }
+
       setMasterDatas((prev) => 
         prev.map((p) => p.id === paperId ? { ...p, status: targetStatus } : p)
       );
-      setSnackbar({ open: true, message: 'Status updated successfully.', severity: 'success' });
+      setSnackbar({ open: true, message: `Status ${isForwardTransition ? 'advanced' : 'forced back'} to ${targetStatus}.`, severity: 'success' });
     } catch (error: any) {
       console.error('Status change failed', error);
-      const msg = error.response?.data?.message || 'Invalid status transition.';
+      const msg = error.response?.data?.message || 'Status change failed.';
       setSnackbar({ open: true, message: msg, severity: 'error' });
+    }
+  }
+
+  async function handleViewReviews(paperId: number) {
+    setReviewsLoading(true);
+    setReviewsOpen(true);
+    try {
+      const res = await api.get(`/reviews/${paperId}/chair`);
+      setReviewsData(res.data);
+    } catch {
+      setReviewsData([]);
+    } finally {
+      setReviewsLoading(false);
     }
   }
 
@@ -192,6 +222,23 @@ export default function ChairDashboard() {
                   <Typography variant="body2">
                     Scores: {paper.reviews?.map((r: any) => r.score).join(', ') || 'N/A'}
                   </Typography>
+                  <Button size="small" variant="outlined" sx={{ mt: 0.5 }} onClick={() => handleViewReviews(paper.id)}>
+                    View Reviews
+                  </Button>
+                  {['DISCUSSION', 'ACCEPTED', 'REJECTED'].includes(paper.status) && paper.rebuttalText && (
+                    <Button 
+                      size="small" 
+                      variant="outlined" 
+                      color="warning" 
+                      sx={{ mt: 0.5, ml: 1 }} 
+                      onClick={() => {
+                        setActiveRebuttalText(paper.rebuttalText);
+                        setRebuttalDialogOpen(true);
+                      }}
+                    >
+                      View Rebuttal
+                    </Button>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Button variant="outlined" size="small" onClick={() => handleViewCitationReport(paper.id)}>
@@ -202,11 +249,9 @@ export default function ChairDashboard() {
                   <Select
                     size="small"
                     value={paper.status}
-                    onChange={(e) => handleStatusChange(paper.id, e.target.value as string)}
-                    disabled={(STATUS_TRANSITIONS[paper.status] || []).length === 0}
+                    onChange={(e) => handleStatusChange(paper.id, paper.status, e.target.value as string)}
                   >
-                    <MenuItem value={paper.status}>{paper.status}</MenuItem>
-                    {(STATUS_TRANSITIONS[paper.status] || []).map((s: string) => (
+                    {ALL_STATUSES.map((s: string) => (
                       <MenuItem key={s} value={s}>{s}</MenuItem>
                     ))}
                   </Select>
@@ -286,6 +331,60 @@ export default function ChairDashboard() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Reviews Dialog */}
+      <Dialog open={reviewsOpen} onClose={() => setReviewsOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Reviews (Chair View)</DialogTitle>
+        <DialogContent dividers>
+          {reviewsLoading ? (
+            <Box textAlign="center" py={3}><CircularProgress /></Box>
+          ) : reviewsData.length === 0 ? (
+            <Typography color="text.secondary">No reviews submitted yet.</Typography>
+          ) : (
+            <Stack spacing={3}>
+              {reviewsData.map((r: any, i: number) => (
+                <Box key={r.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Reviewer {i + 1}{r.user ? ` — ${r.user.firstName} ${r.user.lastName}` : ''}
+                  </Typography>
+                  <Stack direction="row" spacing={3} mb={1}>
+                    <Box>
+                      <Typography variant="caption">Score</Typography>
+                      <Rating value={r.score} max={10} readOnly size="small" />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption">Confidence</Typography>
+                      <Rating value={r.confidence} max={5} readOnly size="small" />
+                    </Box>
+                  </Stack>
+                  <Typography variant="body2" gutterBottom sx={{ whiteSpace: 'pre-wrap' }}>
+                    <strong>Feedback for Authors:</strong> {r.contentAuthors || 'None'}
+                  </Typography>
+                  <Alert severity="info" sx={{ mt: 1 }}>
+                    <strong>Confidential (Chair only):</strong> {r.contentChair || 'None'}
+                  </Alert>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReviewsOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Rebuttal Dialog */}
+      <Dialog open={rebuttalDialogOpen} onClose={() => setRebuttalDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Author Rebuttal</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+            {activeRebuttalText}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRebuttalDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
