@@ -250,6 +250,11 @@ export class MatchingService {
       score: number;
     }[] = [];
 
+    const totalPossiblePairs = papers.length * reviewerRoles.length;
+    let filteredByConflict = 0;
+    let filteredByAuthor = 0;
+    let filteredByNoBid = 0;
+
     for (let pi = 0; pi < papers.length; pi++) {
       const paper = papers[pi];
       const paperVec = tfidfMatrix[paperIndices[pi]];
@@ -258,26 +263,47 @@ export class MatchingService {
         const reviewer = reviewerRoles[ri];
         const pairKey = `${paper.id}-${reviewer.userId}`;
 
-        if (conflictSet.has(pairKey)) continue;
-        if (authorSet.has(pairKey)) continue;
+        if (conflictSet.has(pairKey)) {
+          filteredByConflict++;
+          continue;
+        }
+        if (authorSet.has(pairKey)) {
+          filteredByAuthor++;
+          continue;
+        }
 
         const bidType = bidMap.get(pairKey);
-        if (bidType === BidType.NO) continue;
+        if (bidType === BidType.NO) {
+          filteredByNoBid++;
+          continue;
+        }
 
         const reviewerVec = tfidfMatrix[reviewerIndices[ri]];
-        let similarity = this.calculateCosineSimilarity(paperVec, reviewerVec);
+        const cosineSim = this.calculateCosineSimilarity(paperVec, reviewerVec);
+
+        let score = 0.05 + cosineSim;
 
         if (bidType === BidType.YES) {
-          similarity += 0.15;
+          score += 0.15;
+        } else if (bidType === BidType.MAYBE) {
+          score += 0.05;
         }
 
         scoredPairs.push({
           paperId: paper.id,
           userId: reviewer.userId,
-          score: similarity,
+          score,
         });
       }
     }
+
+    console.log(`[Matcher] Total possible pairs: ${totalPossiblePairs}`);
+    console.log(`[Matcher] Filtered by conflict: ${filteredByConflict}`);
+    console.log(`[Matcher] Filtered by author overlap: ${filteredByAuthor}`);
+    console.log(`[Matcher] Filtered by NO bid: ${filteredByNoBid}`);
+    console.log(
+      `[Matcher] Eligible pairs for assignment: ${scoredPairs.length}`,
+    );
 
     scoredPairs.sort((a, b) => b.score - a.score);
 
@@ -310,6 +336,7 @@ export class MatchingService {
       reviewsPerReviewer.set(pair.userId, reviewerCount + 1);
     }
 
+    console.log(`[Matcher] Reviews created: ${createdReviews.length}`);
     return createdReviews;
   }
 
@@ -337,7 +364,14 @@ export class MatchingService {
 
     return this.paperModel.findAll({
       where: { conferenceId, status: PaperStatus.BIDDING },
-      attributes: ['id', 'title', 'abstract', 'keywords', 'topics', 'createdAt'],
+      attributes: [
+        'id',
+        'title',
+        'abstract',
+        'keywords',
+        'topics',
+        'createdAt',
+      ],
       include: dynamicInclude,
     });
   }
@@ -394,7 +428,11 @@ export class MatchingService {
     return conflict;
   }
 
-  async retractConflict(conferenceId: number, userId: number, paperId: number): Promise<void> {
+  async retractConflict(
+    conferenceId: number,
+    userId: number,
+    paperId: number,
+  ): Promise<void> {
     const paper = await this.paperModel.findByPk(paperId);
     if (!paper || paper.conferenceId !== conferenceId) {
       throw new NotFoundException('Paper not found in this conference');
@@ -408,15 +446,20 @@ export class MatchingService {
     await conflict.destroy();
   }
 
-  async getAssignedPapers(conferenceId: number, userId: number): Promise<Paper[]> {
+  async getAssignedPapers(
+    conferenceId: number,
+    userId: number,
+  ): Promise<Paper[]> {
     const reviews = await this.reviewModel.findAll({
       where: { userId },
-      include: [{
-        model: Paper,
-        where: { conferenceId },
-        attributes: ['id', 'title', 'abstract'],
-      }],
+      include: [
+        {
+          model: Paper,
+          where: { conferenceId },
+          attributes: ['id', 'title', 'abstract'],
+        },
+      ],
     });
-    return reviews.map(r => r.paper);
+    return reviews.map((r) => r.paper);
   }
 }

@@ -52,12 +52,14 @@ export default function ChairDashboard() {
 
   async function handleRunGreedyMatcher() {
     try {
-      await api.post(`/conferences/${id}/auto-assign`);
-      setSnackbar({ open: true, message: 'Greedy matcher ran successfully!', severity: 'success' });
+      const res = await api.post(`/conferences/${id}/auto-assign`);
+      const { reviewsCreated, papersTransitioned } = res.data;
+      setSnackbar({ open: true, message: `Matcher complete: ${reviewsCreated} reviews created, ${papersTransitioned} papers transitioned.`, severity: 'success' });
       loadMasterTable();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Matcher failed', error);
-      setSnackbar({ open: true, message: 'Failed to run greedy matcher.', severity: 'error' });
+      const msg = error.response?.data?.message || 'Failed to run greedy matcher.';
+      setSnackbar({ open: true, message: msg, severity: 'error' });
     }
   }
 

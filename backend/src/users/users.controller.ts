@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, Req, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -25,5 +25,12 @@ export class UsersController {
     },
   ) {
     return this.usersService.updateProfile(req.user.userId, body);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('search')
+  async searchUsers(@Query('q') query: string, @Req() req: any) {
+    if (!query || query.trim().length < 2) return [];
+    return this.usersService.searchByEmail(query.trim(), req.user.userId);
   }
 }

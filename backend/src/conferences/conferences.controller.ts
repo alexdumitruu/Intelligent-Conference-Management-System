@@ -117,19 +117,43 @@ export class ConferencesController {
     if (!conference) {
       throw new NotFoundException('Conference not found');
     }
-    await this.matchingService.executeGreedyAssignment(
+
+    const biddingPapers = conference.papers.filter(
+      (p) => p.status === PaperStatus.BIDDING,
+    );
+    if (biddingPapers.length === 0) {
+      throw new BadRequestException(
+        'No papers in BIDDING status. Transition papers to BIDDING before running the matcher.',
+      );
+    }
+
+    const reviewerCount = await ConferenceRole.count({
+      where: { conferenceId, roleType: ConferenceRoleType.REVIEWER },
+    });
+    if (reviewerCount === 0) {
+      throw new BadRequestException(
+        'No reviewers assigned to this conference. Assign reviewer roles first.',
+      );
+    }
+
+    const createdReviews = await this.matchingService.executeGreedyAssignment(
       conferenceId,
       MAX_REVIEWS_PER_PAPER,
     );
-    for (const paper of conference.papers) {
-      if (paper.status === PaperStatus.BIDDING) {
-        await this.papersService.transitionState(
-          paper.id,
-          PaperStatus.UNDER_REVIEW,
-          req.user.userId,
-        );
-      }
+
+    for (const paper of biddingPapers) {
+      await this.papersService.transitionState(
+        paper.id,
+        PaperStatus.UNDER_REVIEW,
+        req.user.userId,
+      );
     }
+
+    return {
+      message: `Greedy matcher complete.`,
+      reviewsCreated: createdReviews.length,
+      papersTransitioned: biddingPapers.length,
+    };
   }
 
   @Get(':conferenceId/conflicts')

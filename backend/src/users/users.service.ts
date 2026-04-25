@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -39,5 +40,19 @@ export class UsersService {
     await user.save();
     
     return user;
+  }
+
+  async searchByEmail(query: string, excludeUserId?: number): Promise<User[]> {
+    const where: any = {
+      email: { [Op.iLike]: `%${query}%` },
+    };
+    if (excludeUserId) {
+      where.id = { [Op.ne]: excludeUserId };
+    }
+    return this.userModel.findAll({
+      where,
+      attributes: ['id', 'email', 'firstName', 'lastName', 'affiliation'],
+      limit: 10,
+    });
   }
 }

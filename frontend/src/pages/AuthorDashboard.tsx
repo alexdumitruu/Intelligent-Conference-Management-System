@@ -1,15 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
   Box, Typography, CircularProgress,
   Alert, Stack, TextField, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Paper, Chip
+  TableContainer, TableHead, TableRow, Paper, Chip,
+  Autocomplete, Avatar, Tooltip
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { useParams } from 'react-router-dom';
 import api from '../api';
+
+interface CoAuthor {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  affiliation?: string;
+}
 
 export default function AuthorDashboard() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +36,12 @@ export default function AuthorDashboard() {
   const [keywords, setKeywords] = useState('');
   const [topics, setTopics] = useState('');
 
+  // Co-author State
+  const [coAuthors, setCoAuthors] = useState<CoAuthor[]>([]);
+  const [coAuthorSearch, setCoAuthorSearch] = useState('');
+  const [coAuthorResults, setCoAuthorResults] = useState<CoAuthor[]>([]);
+  const [coAuthorSearchLoading, setCoAuthorSearchLoading] = useState(false);
+
   // Rebuttal State
   const [rebuttalOpen, setRebuttalOpen] = useState(false);
   const [activePaperId, setActivePaperId] = useState<number | null>(null);
@@ -35,12 +51,34 @@ export default function AuthorDashboard() {
     if (id) loadMyPapers();
   }, [id]);
 
+  // Debounced co-author search
+  useEffect(() => {
+    if (coAuthorSearch.trim().length < 2) {
+      setCoAuthorResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setCoAuthorSearchLoading(true);
+      try {
+        const res = await api.get(`/users/search?q=${encodeURIComponent(coAuthorSearch.trim())}`);
+        // Filter out users already added as co-authors
+        const filtered = res.data.filter(
+          (u: CoAuthor) => !coAuthors.some(ca => ca.id === u.id)
+        );
+        setCoAuthorResults(filtered);
+      } catch (err) {
+        console.error('Co-author search failed', err);
+      } finally {
+        setCoAuthorSearchLoading(false);
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [coAuthorSearch, coAuthors]);
+
   async function loadMyPapers() {
     setIsLoading(true);
     try {
       const res = await api.get(`/conferences/${id}/papers/mine`);
-      // Note: If backend endpoint returns all papers globally, filtering might be required.
-      // Expected to only return papers authored by the user making the request.
       setPapers(res.data);
     } catch (err) {
       console.error('Failed to load papers', err);
@@ -49,9 +87,33 @@ export default function AuthorDashboard() {
     }
   }
 
+  function resetSubmissionForm() {
+    setUploadSuccess(false);
+    setUploadLoading(false);
+    setErrorMessage('');
+    setCustomTitle('');
+    setCustomAbstract('');
+    setKeywords('');
+    setTopics('');
+    setCoAuthors([]);
+    setCoAuthorSearch('');
+    setCoAuthorResults([]);
+  }
+
+  function openNewSubmission() {
+    resetSubmissionForm();
+    setNewSubmissionOpen(true);
+  }
+
+  function closeNewSubmission() {
+    setNewSubmissionOpen(false);
+    resetSubmissionForm();
+  }
+
   async function handleFileUpload(file: File) {
     setUploadLoading(true);
     setErrorMessage('');
+    let createdPaperId: number | null = null;
     try {
       const keywordArray = keywords.split(',').map(k => k.trim()).filter(k => k !== '');
       const topicArray = topics.split(',').map(t => t.trim()).filter(t => t !== '');
@@ -61,19 +123,30 @@ export default function AuthorDashboard() {
           title: customTitle.trim() || file.name, 
           abstract: customAbstract.trim() || 'No abstract provided',
           keywords: keywordArray,
-          topics: topicArray
+          topics: topicArray,
+          coAuthorIds: coAuthors.map(ca => ca.id)
         }
       );
+      createdPaperId = paperRes.data.id;
+
       const formData = new FormData();
       formData.append('file', file);
-      const response = await api.patch(`/conferences/${id}/papers/${paperRes.data.id}/submit`, formData);
+      const response = await api.post(`/conferences/${id}/papers/${createdPaperId}/submit`, formData);
       if (response.status === 200 || response.status === 201) {
         setUploadSuccess(true);
         loadMyPapers();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload failed:', error);
-      setErrorMessage('Upload failed. Please try again.');
+      const msg = error.response?.data?.message || 'Upload failed. Please try again.';
+      if (createdPaperId) {
+        try {
+          await api.delete(`/conferences/${id}/papers/${createdPaperId}`);
+        } catch (cleanupErr) {
+          console.error('Draft cleanup failed:', cleanupErr);
+        }
+      }
+      setErrorMessage(msg);
     } finally {
       setUploadLoading(false);
     }
@@ -112,11 +185,19 @@ export default function AuthorDashboard() {
     }
   }
 
+  function getAuthorNames(paper: any): string {
+    if (!paper.authors || paper.authors.length === 0) return '—';
+    return paper.authors
+      .sort((a: any, b: any) => a.authorOrder - b.authorOrder)
+      .map((a: any) => a.user ? `${a.user.firstName} ${a.user.lastName}` : `User #${a.userId}`)
+      .join(', ');
+  }
+
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" mb={3}>
         <Typography variant="h4">My Submissions</Typography>
-        <Button variant="contained" onClick={() => setNewSubmissionOpen(true)}>
+        <Button variant="contained" onClick={openNewSubmission}>
           New Submission
         </Button>
       </Stack>
@@ -127,6 +208,7 @@ export default function AuthorDashboard() {
             <TableRow>
               <TableCell>Title</TableCell>
               <TableCell>Abstract</TableCell>
+              <TableCell>Authors</TableCell>
               <TableCell align="center">Status</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
@@ -134,13 +216,13 @@ export default function AuthorDashboard() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : papers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   No submissions yet.
                 </TableCell>
               </TableRow>
@@ -149,6 +231,7 @@ export default function AuthorDashboard() {
                 <TableRow key={p.id}>
                   <TableCell>{p.title}</TableCell>
                   <TableCell>{p.abstract?.substring(0, 50)}...</TableCell>
+                  <TableCell>{getAuthorNames(p)}</TableCell>
                   <TableCell align="center">
                     <Chip label={p.status} color={getStatusColor(p.status) as any} size="small" />
                   </TableCell>
@@ -175,11 +258,7 @@ export default function AuthorDashboard() {
       </TableContainer>
 
       {/* New Submission Dialog */}
-      <Dialog open={newSubmissionOpen} onClose={() => {
-        setNewSubmissionOpen(false);
-        setUploadSuccess(false);
-        setErrorMessage('');
-      }} maxWidth="sm" fullWidth>
+      <Dialog open={newSubmissionOpen} onClose={closeNewSubmission} maxWidth="sm" fullWidth>
         <DialogTitle>Submit New Paper</DialogTitle>
         <DialogContent dividers>
           {uploadLoading ? (
@@ -191,6 +270,9 @@ export default function AuthorDashboard() {
             <Stack alignItems="center" spacing={2} py={6}>
               <CheckCircleIcon sx={{ fontSize: 60, color: 'success.main' }} />
               <Typography variant="h6" color="success.main">Paper submitted successfully!</Typography>
+              <Button variant="outlined" onClick={openNewSubmission}>
+                Submit Another Paper
+              </Button>
             </Stack>
           ) : (
             <>
@@ -232,6 +314,71 @@ export default function AuthorDashboard() {
                 sx={{ mb: 3 }}
                 helperText="e.g., NLP, Computer Vision"
               />
+
+              {/* Co-Author Section */}
+              <Typography variant="subtitle1" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PersonAddIcon fontSize="small" /> Co-Authors (optional)
+              </Typography>
+              <Autocomplete
+                freeSolo
+                options={coAuthorResults}
+                getOptionLabel={(option) => 
+                  typeof option === 'string' ? option : `${option.firstName} ${option.lastName} (${option.email})`
+                }
+                loading={coAuthorSearchLoading}
+                inputValue={coAuthorSearch}
+                onInputChange={(_, value) => setCoAuthorSearch(value)}
+                onChange={(_, value) => {
+                  if (value && typeof value !== 'string') {
+                    setCoAuthors([...coAuthors, value]);
+                    setCoAuthorSearch('');
+                    setCoAuthorResults([]);
+                  }
+                }}
+                renderOption={(props, option) => (
+                  <li {...props} key={typeof option === 'string' ? option : option.id}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Avatar sx={{ width: 28, height: 28, fontSize: 14 }}>
+                        {typeof option !== 'string' ? option.firstName?.[0] : '?'}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2">
+                          {typeof option !== 'string' ? `${option.firstName} ${option.lastName}` : option}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {typeof option !== 'string' ? option.email : ''}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Search by email"
+                    placeholder="Type an email to search..."
+                    variant="outlined"
+                    size="small"
+                    helperText="Search for registered users by email to add as co-authors"
+                  />
+                )}
+                sx={{ mb: 2 }}
+              />
+              {coAuthors.length > 0 && (
+                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
+                  {coAuthors.map((ca) => (
+                    <Tooltip key={ca.id} title={ca.email}>
+                      <Chip
+                        avatar={<Avatar>{ca.firstName?.[0]}</Avatar>}
+                        label={`${ca.firstName} ${ca.lastName}`}
+                        onDelete={() => setCoAuthors(coAuthors.filter(c => c.id !== ca.id))}
+                        sx={{ mb: 1 }}
+                      />
+                    </Tooltip>
+                  ))}
+                </Stack>
+              )}
+
               <Box
                 {...getRootProps()}
                 sx={{
@@ -257,7 +404,7 @@ export default function AuthorDashboard() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setNewSubmissionOpen(false)}>Close</Button>
+          <Button onClick={closeNewSubmission}>Close</Button>
         </DialogActions>
       </Dialog>
 
@@ -287,4 +434,3 @@ export default function AuthorDashboard() {
     </Box>
   );
 }
-

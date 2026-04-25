@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -48,7 +49,7 @@ export class PapersController {
   @Post()
   async createDraft(
     @Param('conferenceId', ParseIntPipe) conferenceId: number,
-    @Body() body: { title: string; abstract: string; keywords?: string[]; topics?: string[] },
+    @Body() body: { title: string; abstract: string; keywords?: string[]; topics?: string[]; coAuthorIds?: number[] },
     @Req() req: any,
   ) {
     return this.papersService.createPaper(
@@ -57,11 +58,40 @@ export class PapersController {
       conferenceId,
       req.user.userId,
       body.keywords,
-      body.topics
+      body.topics,
+      body.coAuthorIds
     );
   }
 
-  @Patch(':paperId/submit')
+  @Delete(':paperId')
+  async deleteDraft(
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Req() req: any,
+  ) {
+    await this.papersService.deleteDraft(paperId, req.user.userId);
+    return { message: 'Draft paper deleted successfully' };
+  }
+
+  @Post(':paperId/co-authors')
+  async addCoAuthor(
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Body() body: { userId: number },
+    @Req() req: any,
+  ) {
+    return this.papersService.addCoAuthor(paperId, req.user.userId, body.userId);
+  }
+
+  @Delete(':paperId/co-authors/:coAuthorUserId')
+  async removeCoAuthor(
+    @Param('paperId', ParseIntPipe) paperId: number,
+    @Param('coAuthorUserId', ParseIntPipe) coAuthorUserId: number,
+    @Req() req: any,
+  ) {
+    await this.papersService.removeCoAuthor(paperId, req.user.userId, coAuthorUserId);
+    return { message: 'Co-author removed successfully' };
+  }
+
+  @Post(':paperId/submit')
   @UseInterceptors(FileInterceptor('file'))
   async uploadPdfAndSubmit(
     @Param('paperId', ParseIntPipe) paperId: number,
