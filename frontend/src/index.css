@@ -1,11 +1,84 @@
+/* ============================================================
+   Modern Academic Scholar — Design System Globals
+   ============================================================ */
+
+/* ── Design Tokens as CSS Custom Properties ── */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Colors — Primary */
+  --color-primary: #002147;
+  --color-primary-hover: #001833;
+  --color-primary-pressed: #000B1A;
+  --color-primary-surface: #F0F4F8;
+
+  /* Colors — Background */
+  --color-bg-app: #F8F9FA;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-surface-alt: #F1F3F5;
+
+  /* Colors — Text */
+  --color-text-primary: #1A202C;
+  --color-text-secondary: #4A5568;
+  --color-text-tertiary: #718096;
+  --color-text-inverse: #FFFFFF;
+  --color-text-accent: #002147;
+
+  /* Colors — Border */
+  --color-border-subtle: #EDF2F7;
+  --color-border-default: #E2E8F0;
+  --color-border-strong: #CBD5E0;
+  --color-border-focus: #C5A059;
+
+  /* Colors — Status */
+  --color-success: #C5A059;
+  --color-success-surface: #FDFBF7;
+  --color-warning: #D97706;
+  --color-warning-surface: #FFFBEB;
+  --color-error: #A32638;
+  --color-error-surface: #FDF5F6;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: 'Merriweather', 'Lora', 'Georgia', serif;
+  --font-mono: 'Fira Code', 'Courier New', monospace;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Radii */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-default: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-default: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  --shadow-focus-ring: 0 0 0 3px rgba(197, 160, 89, 0.4);
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-elegant: cubic-bezier(0.25, 0.1, 0.25, 1.0);
+
+  /* Root setup */
+  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-app);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,56 +86,136 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* ── Base Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-bg-app);
+  color: var(--color-text-primary);
+  transition: background-color var(--duration-normal) var(--easing-elegant);
+}
+
+#root {
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+/* ── Links ── */
+a {
   font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--easing-default);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+/* ── Focus Styles (Global Gold Ring) ── */
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.875rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+
+/* ── Academic Text Utility ──
+   Apply to any content written by researchers:
+   paper titles, abstracts, rebuttals, review comments */
+.academic-text {
+  font-family: var(--font-serif);
+  line-height: 1.8;
+  color: var(--color-text-primary);
+}
+
+.academic-title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-text-primary);
+}
+
+/* ── Monospace Utility ── */
+.mono-text {
+  font-family: var(--font-mono);
+}
+
+/* ── Card Elevation Helpers ── */
+.card-elevated {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-default);
+  box-shadow: var(--shadow-default);
+  transition: box-shadow var(--duration-normal) var(--easing-elegant),
+              transform var(--duration-normal) var(--easing-elegant);
+}
+
+.card-elevated:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-interactive:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* ── Scrollbar Styling ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-surface-alt);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* ── Subtle Entrance Animation ── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
-  a:hover {
-    color: #747bff;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  button {
-    background-color: #f9f9f9;
-  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp var(--duration-slow) var(--easing-elegant) both;
+}
+
+/* ── Selection Color ── */
+::selection {
+  background-color: rgba(0, 33, 71, 0.15);
+  color: var(--color-text-primary);
 }

@@ -3,11 +3,18 @@ import {
   Box, Tabs, Tab, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, ToggleButton,
   ToggleButtonGroup, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Snackbar, Alert, Typography
+  DialogActions, TextField, Snackbar, Alert, Typography, Stack, Chip
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
+import DownloadIcon from '@mui/icons-material/Download';
+import RateReviewIcon from '@mui/icons-material/RateReview';
+import GavelIcon from '@mui/icons-material/Gavel';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import api from '../api';
 import ReviewFormDialog from '../components/ReviewFormDialog';
+
+const serifFont = '"Merriweather", "Georgia", serif';
 
 export default function ReviewerDashboard() {
   const { id } = useParams<{ id: string }>();
@@ -102,17 +109,60 @@ export default function ReviewerDashboard() {
     }
   }
 
+  function getStatusChipSx(status: string) {
+    switch (status) {
+      case 'ACCEPTED':
+        return { bgcolor: '#FDFBF7', color: '#8B6914', border: '1px solid #C5A059', fontWeight: 600 };
+      case 'REJECTED':
+        return { bgcolor: '#FDF5F6', color: '#A32638', border: '1px solid #A32638', fontWeight: 600 };
+      case 'DISCUSSION':
+        return { bgcolor: '#FFFBEB', color: '#92400E', border: '1px solid #D97706', fontWeight: 600 };
+      case 'UNDER_REVIEW':
+        return { bgcolor: '#F0F4F8', color: '#002147', border: '1px solid #002147', fontWeight: 600 };
+      default:
+        return { fontWeight: 500 };
+    }
+  }
+
   return (
     <Box>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+      {/* Page Header */}
+      <Box mb={3}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          Reviewer Dashboard
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mt={0.5}>
+          Review assigned papers, place bids, and declare conflicts of interest
+        </Typography>
+      </Box>
+
+      {/* Tabs */}
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          mb: 3,
+          bgcolor: 'background.paper',
+          borderRadius: '8px 8px 0 0',
+        }}
+      >
         <Tabs value={tabIndex} onChange={(_, nv) => setTabIndex(nv)}>
-          <Tab label="My Assigned Reviews" />
-          <Tab label="Bidding & Conflicts" />
+          <Tab
+            icon={<RateReviewIcon sx={{ fontSize: 18 }} />}
+            iconPosition="start"
+            label="My Assigned Reviews"
+          />
+          <Tab
+            icon={<GavelIcon sx={{ fontSize: 18 }} />}
+            iconPosition="start"
+            label="Bidding & Conflicts"
+          />
         </Tabs>
       </Box>
 
+      {/* ── Bidding Tab ── */}
       {tabIndex === 1 && (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -123,123 +173,236 @@ export default function ReviewerDashboard() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {biddingPapers.map((paper) => (
-                <TableRow key={paper.id}>
-                  <TableCell>{paper.title}</TableCell>
-                  <TableCell>{paper.abstract}</TableCell>
-                  <TableCell align="center">
-                    <ToggleButtonGroup
-                      exclusive
-                      size="small"
-                      onChange={(_, newVal) => handleBidChange(paper.id, newVal)}
-                    >
-                      <ToggleButton value="YES" color="success">YES</ToggleButton>
-                      <ToggleButton value="MAYBE" color="warning">MAYBE</ToggleButton>
-                      <ToggleButton value="NO" color="error">NO</ToggleButton>
-                    </ToggleButtonGroup>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Button 
-                      color="error" 
-                      variant="outlined"
-                      size="small"
-                      sx={{ mr: 1 }}
-                      onClick={() => {
-                        setSelectedPaperId(paper.id);
-                        setConflictDialogOpen(true);
-                      }}
-                    >
-                      Declare
-                    </Button>
-                    <Button
-                      color="secondary"
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleRetractConflict(paper.id)}
-                    >
-                      Retract
-                    </Button>
+              {biddingPapers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                    <Typography color="text.secondary">No papers available for bidding.</Typography>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                biddingPapers.map((paper) => (
+                  <TableRow key={paper.id}>
+                    <TableCell>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontFamily: serifFont, fontWeight: 700 }}
+                      >
+                        {paper.title}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: serifFont,
+                          lineHeight: 1.8,
+                          color: 'text.secondary',
+                          maxWidth: 350,
+                        }}
+                      >
+                        {paper.abstract}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      <ToggleButtonGroup
+                        exclusive
+                        size="small"
+                        onChange={(_, newVal) => handleBidChange(paper.id, newVal)}
+                        sx={{
+                          '& .MuiToggleButton-root': {
+                            px: 2,
+                            py: 0.5,
+                          },
+                        }}
+                      >
+                        <ToggleButton
+                          value="YES"
+                          sx={{
+                            '&.Mui-selected': {
+                              bgcolor: '#FDFBF7',
+                              color: '#8B6914',
+                              borderColor: '#C5A059',
+                              '&:hover': { bgcolor: '#FAF5EB' },
+                            },
+                          }}
+                        >
+                          Yes
+                        </ToggleButton>
+                        <ToggleButton
+                          value="MAYBE"
+                          sx={{
+                            '&.Mui-selected': {
+                              bgcolor: '#FFFBEB',
+                              color: '#92400E',
+                              borderColor: '#D97706',
+                              '&:hover': { bgcolor: '#FFF7DB' },
+                            },
+                          }}
+                        >
+                          Maybe
+                        </ToggleButton>
+                        <ToggleButton
+                          value="NO"
+                          sx={{
+                            '&.Mui-selected': {
+                              bgcolor: '#FDF5F6',
+                              color: '#A32638',
+                              borderColor: '#A32638',
+                              '&:hover': { bgcolor: '#FBECED' },
+                            },
+                          }}
+                        >
+                          No
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <Button 
+                          color="error" 
+                          variant="outlined"
+                          size="small"
+                          startIcon={<WarningAmberIcon />}
+                          onClick={() => {
+                            setSelectedPaperId(paper.id);
+                            setConflictDialogOpen(true);
+                          }}
+                        >
+                          Declare
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleRetractConflict(paper.id)}
+                        >
+                          Retract
+                        </Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       )}
 
+      {/* ── Assigned Reviews Tab ── */}
       {tabIndex === 0 && (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell align="center">Action</TableCell>
+                <TableCell>Paper Title</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {assignedPapers.map((paper) => (
-                <TableRow key={paper.id}>
-                  <TableCell>{paper.title}</TableCell>
-                  <TableCell align="center">
-                    <Button 
-                      variant="outlined"
-                      size="small"
-                      sx={{ mr: 1 }}
-                      onClick={() => handleDownloadPdf(paper.id)}
-                    >
-                      Download PDF
-                    </Button>
-                    {(!paper.currentUserReview || paper.currentUserReview.score === 0) && paper.status === 'UNDER_REVIEW' && (
-                      <Button 
-                        variant="contained"
-                        size="small"
-                        onClick={() => {
-                          setSelectedPaperId(paper.id);
-                          setReviewDialogOpen(true);
-                        }}
-                      >
-                        Submit Review
-                      </Button>
-                    )}
-                    {['DISCUSSION', 'ACCEPTED', 'REJECTED'].includes(paper.status) && paper.rebuttalText && (
-                      <Button
-                        variant="outlined"
-                        color="warning"
-                        size="small"
-                        sx={{ ml: 1 }}
-                        onClick={() => {
-                          setActiveRebuttalText(paper.rebuttalText);
-                          setRebuttalDialogOpen(true);
-                        }}
-                      >
-                        View Rebuttal
-                      </Button>
-                    )}
+              {assignedPapers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
+                    <RateReviewIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                    <Typography color="text.secondary">
+                      No papers assigned for review yet.
+                    </Typography>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                assignedPapers.map((paper) => (
+                  <TableRow key={paper.id}>
+                    <TableCell>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontFamily: serifFont, fontWeight: 700 }}
+                      >
+                        {paper.title}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={paper.status?.replace('_', ' ') || 'N/A'}
+                        size="small"
+                        sx={getStatusChipSx(paper.status)}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <Button 
+                          variant="outlined"
+                          size="small"
+                          startIcon={<DownloadIcon />}
+                          onClick={() => handleDownloadPdf(paper.id)}
+                        >
+                          PDF
+                        </Button>
+                        {(!paper.currentUserReview || paper.currentUserReview.score === 0) && paper.status === 'UNDER_REVIEW' && (
+                          <Button 
+                            variant="contained"
+                            size="small"
+                            startIcon={<RateReviewIcon />}
+                            onClick={() => {
+                              setSelectedPaperId(paper.id);
+                              setReviewDialogOpen(true);
+                            }}
+                          >
+                            Review
+                          </Button>
+                        )}
+                        {['DISCUSSION', 'ACCEPTED', 'REJECTED'].includes(paper.status) && paper.rebuttalText && (
+                          <Button
+                            variant="outlined"
+                            color="warning"
+                            size="small"
+                            startIcon={<VisibilityIcon />}
+                            onClick={() => {
+                              setActiveRebuttalText(paper.rebuttalText);
+                              setRebuttalDialogOpen(true);
+                            }}
+                          >
+                            Rebuttal
+                          </Button>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       )}
 
-      <Dialog open={conflictDialogOpen} onClose={() => setConflictDialogOpen(false)}>
-        <DialogTitle>Declare Conflict of Interest</DialogTitle>
-        <DialogContent>
+      {/* ── Conflict Dialog ── */}
+      <Dialog open={conflictDialogOpen} onClose={() => setConflictDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <WarningAmberIcon sx={{ color: 'error.main' }} />
+          Declare Conflict of Interest
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Please describe the nature of your conflict of interest with this paper.
+          </Typography>
           <TextField
             autoFocus
-            margin="dense"
             label="Reason for conflict"
             fullWidth
             variant="outlined"
+            multiline
+            rows={3}
             value={conflictReason}
             onChange={(e) => setConflictReason(e.target.value)}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={() => setConflictDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleConflictSubmit} color="error" variant="contained">
-            Submit
+          <Button
+            onClick={handleConflictSubmit}
+            color="error"
+            variant="contained"
+            disabled={!conflictReason.trim()}
+          >
+            Declare Conflict
           </Button>
         </DialogActions>
       </Dialog>
@@ -255,18 +418,31 @@ export default function ReviewerDashboard() {
         conferenceId={id} 
       />
 
+      {/* ── Rebuttal Dialog ── */}
       <Dialog open={rebuttalDialogOpen} onClose={() => setRebuttalDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Author Rebuttal</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <VisibilityIcon sx={{ color: 'warning.main' }} />
+          Author Rebuttal
+        </DialogTitle>
         <DialogContent dividers>
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+          <Typography
+            variant="body1"
+            sx={{
+              whiteSpace: 'pre-wrap',
+              fontFamily: serifFont,
+              lineHeight: 1.8,
+              py: 1,
+            }}
+          >
             {activeRebuttalText}
           </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={() => setRebuttalDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
+      {/* ── Snackbar ── */}
       <Snackbar 
         open={snackbar.open} 
         autoHideDuration={4000} 

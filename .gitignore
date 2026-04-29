@@ -35,3 +35,5 @@ npm-debug.log*
 
 # Backend seed script
 /backend/seed-test-data.sh
+
+DESIGN.md

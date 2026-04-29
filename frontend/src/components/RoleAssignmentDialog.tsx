@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Alert, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import {
+  Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  TextField, Alert, Typography, FormControl, InputLabel, Select,
+  MenuItem, Stack
+} from '@mui/material';
+import PeopleIcon from '@mui/icons-material/People';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import api from '../api';
 
 interface RoleAssignmentDialogProps {
@@ -35,37 +41,54 @@ export default function RoleAssignmentDialog({ open, onClose, conferenceId }: Ro
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Assign Role</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <PeopleIcon sx={{ color: 'primary.main' }} />
+        Assign Role
+      </DialogTitle>
+      <DialogContent dividers>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
           Assign a role to registered users for this conference by providing their email address.
         </Typography>
         
-        <TextField
-          label="User Email Address"
-          fullWidth
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          margin="normal"
-        />
+        <Stack spacing={2.5}>
+          <TextField
+            id="role-email"
+            label="User Email Address"
+            fullWidth
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="user@university.edu"
+            autoComplete="email"
+          />
 
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Role</InputLabel>
-          <Select value={roleType} label="Role" onChange={(e) => setRoleType(e.target.value)}>
-            <MenuItem value="AUTHOR">Author</MenuItem>
-            <MenuItem value="REVIEWER">Reviewer</MenuItem>
-            <MenuItem value="CHAIR">Chair</MenuItem>
-          </Select>
-        </FormControl>
+          <FormControl fullWidth>
+            <InputLabel>Role</InputLabel>
+            <Select
+              id="role-type"
+              value={roleType}
+              label="Role"
+              onChange={(e) => setRoleType(e.target.value)}
+            >
+              <MenuItem value="AUTHOR">Author</MenuItem>
+              <MenuItem value="REVIEWER">Reviewer</MenuItem>
+              <MenuItem value="CHAIR">Chair</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
 
-        {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert>}
-
+        {error && <Alert severity="error" sx={{ mt: 2.5 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mt: 2.5 }}>{success}</Alert>}
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose}>Close</Button>
-        <Button onClick={handleAssign} variant="contained" disabled={isLoading || !email}>
+        <Button
+          onClick={handleAssign}
+          variant="contained"
+          disabled={isLoading || !email}
+          startIcon={<PersonAddIcon />}
+          sx={{ minWidth: 130 }}
+        >
           Assign Role
         </Button>
       </DialogActions>

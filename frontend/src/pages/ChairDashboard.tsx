@@ -2,10 +2,18 @@ import { useState, useEffect } from 'react';
 import {
   Box, Typography, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper,
-  Button, Select, MenuItem, Chip, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions,
-  CircularProgress, Rating
+  Button, Select, MenuItem, Chip, Stack, Snackbar, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  CircularProgress, Rating, Divider
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
+import PeopleIcon from '@mui/icons-material/People';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import DownloadIcon from '@mui/icons-material/Download';
+import HistoryIcon from '@mui/icons-material/History';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import api from '../api';
 import CitationReportViewer from '../components/CitationReportViewer';
 import RoleAssignmentDialog from '../components/RoleAssignmentDialog';
@@ -21,6 +29,25 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
 };
 
 const ALL_STATUSES = ['DRAFT', 'SUBMITTED', 'BIDDING', 'UNDER_REVIEW', 'DISCUSSION', 'ACCEPTED', 'REJECTED'];
+
+const serifFont = '"Merriweather", "Georgia", serif';
+
+function getStatusChipSx(status: string) {
+  switch (status) {
+    case 'ACCEPTED':
+      return { bgcolor: '#FDFBF7', color: '#8B6914', border: '1px solid #C5A059', fontWeight: 600 };
+    case 'REJECTED':
+      return { bgcolor: '#FDF5F6', color: '#A32638', border: '1px solid #A32638', fontWeight: 600 };
+    case 'DISCUSSION':
+      return { bgcolor: '#FFFBEB', color: '#92400E', border: '1px solid #D97706', fontWeight: 600 };
+    case 'UNDER_REVIEW':
+      return { bgcolor: '#F0F4F8', color: '#002147', border: '1px solid #002147', fontWeight: 600 };
+    case 'BIDDING':
+      return { bgcolor: '#F0F4F8', color: '#4A5568', border: '1px solid #CBD5E0', fontWeight: 600 };
+    default:
+      return { fontWeight: 500 };
+  }
+}
 
 export default function ChairDashboard() {
   const { id } = useParams<{ id: string }>();
@@ -175,19 +202,39 @@ export default function ChairDashboard() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" mb={3}>
-        <Typography variant="h4">Chair Master Table</Typography>
-        <Stack direction="row" spacing={2}>
-          <Button variant="outlined" onClick={() => setRoleDialogOpen(true)}>
+      {/* Page Header */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            Chair Master Table
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mt={0.5}>
+            Manage paper lifecycle, review assignments, and citation verification
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            id="manage-roles-btn"
+            variant="outlined"
+            startIcon={<PeopleIcon />}
+            onClick={() => setRoleDialogOpen(true)}
+          >
             Manage Roles
           </Button>
-          <Button variant="contained" color="secondary" onClick={handleRunGreedyMatcher}>
+          <Button
+            id="run-matcher-btn"
+            variant="contained"
+            color="secondary"
+            startIcon={<AutoFixHighIcon />}
+            onClick={handleRunGreedyMatcher}
+          >
             Run Matcher
           </Button>
         </Stack>
       </Stack>
 
-      <TableContainer component={Paper}>
+      {/* Master Table */}
+      <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -199,77 +246,158 @@ export default function ChairDashboard() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {masterDatas.map((paper) => (
-              <TableRow key={paper.id}>
-                <TableCell>
-                  <Typography variant="subtitle2">{paper.title}</Typography>
-                  <Chip label={paper.status} size="small" sx={{ mr: 1, mb: 1 }} />
-                  <br />
-                  <Button variant="text" size="small" onClick={() => handleDownloadPdf(paper.id)}>
-                    PDF
-                  </Button>
-                  <Button variant="text" size="small" onClick={() => handleViewHistory(paper.id)}>
-                    History
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  {paper.authors?.map((a: any) => (
-                    <Typography key={a.id} variant="body2">{a.user?.firstName} {a.user?.lastName}</Typography>
-                  ))}
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">Reviews: {paper.reviews?.length || 0}</Typography>
-                  <Typography variant="body2">
-                    Scores: {paper.reviews?.map((r: any) => r.score).join(', ') || 'N/A'}
-                  </Typography>
-                  <Button size="small" variant="outlined" sx={{ mt: 0.5 }} onClick={() => handleViewReviews(paper.id)}>
-                    View Reviews
-                  </Button>
-                  {['DISCUSSION', 'ACCEPTED', 'REJECTED'].includes(paper.status) && paper.rebuttalText && (
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
-                      color="warning" 
-                      sx={{ mt: 0.5, ml: 1 }} 
-                      onClick={() => {
-                        setActiveRebuttalText(paper.rebuttalText);
-                        setRebuttalDialogOpen(true);
-                      }}
-                    >
-                      View Rebuttal
-                    </Button>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Button variant="outlined" size="small" onClick={() => handleViewCitationReport(paper.id)}>
-                    View Report
-                  </Button>
-                </TableCell>
-                <TableCell align="center">
-                  <Select
-                    size="small"
-                    value={paper.status}
-                    onChange={(e) => handleStatusChange(paper.id, paper.status, e.target.value as string)}
-                  >
-                    {ALL_STATUSES.map((s: string) => (
-                      <MenuItem key={s} value={s}>{s}</MenuItem>
-                    ))}
-                  </Select>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                  <CircularProgress sx={{ color: 'secondary.main' }} />
                 </TableCell>
               </TableRow>
-            ))}
+            ) : masterDatas.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                  <Typography color="text.secondary">
+                    No papers submitted to this conference yet.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              masterDatas.map((paper) => (
+                <TableRow key={paper.id}>
+                  {/* Paper Info */}
+                  <TableCell sx={{ minWidth: 220 }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontFamily: serifFont, fontWeight: 700, color: 'text.primary', mb: 0.5 }}
+                    >
+                      {paper.title}
+                    </Typography>
+                    <Chip
+                      label={paper.status.replace('_', ' ')}
+                      size="small"
+                      sx={{ ...getStatusChipSx(paper.status), mr: 0.5, mb: 1 }}
+                    />
+                    <Stack direction="row" spacing={0.5} mt={0.5}>
+                      <Button
+                        variant="text"
+                        size="small"
+                        startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
+                        onClick={() => handleDownloadPdf(paper.id)}
+                        sx={{ fontSize: '0.75rem', px: 1, minWidth: 'auto' }}
+                      >
+                        PDF
+                      </Button>
+                      <Button
+                        variant="text"
+                        size="small"
+                        startIcon={<HistoryIcon sx={{ fontSize: 14 }} />}
+                        onClick={() => handleViewHistory(paper.id)}
+                        sx={{ fontSize: '0.75rem', px: 1, minWidth: 'auto' }}
+                      >
+                        History
+                      </Button>
+                    </Stack>
+                  </TableCell>
+
+                  {/* Authors */}
+                  <TableCell>
+                    {paper.authors?.map((a: any) => (
+                      <Typography
+                        key={a.id}
+                        variant="body2"
+                        sx={{ fontFamily: serifFont, color: 'text.secondary' }}
+                      >
+                        {a.user?.firstName} {a.user?.lastName}
+                      </Typography>
+                    ))}
+                  </TableCell>
+
+                  {/* Review Status */}
+                  <TableCell sx={{ minWidth: 200 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Reviews: <strong>{paper.reviews?.length || 0}</strong>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Scores: <strong>{paper.reviews?.map((r: any) => r.score).join(', ') || 'N/A'}</strong>
+                    </Typography>
+                    <Stack direction="row" spacing={0.5} mt={1}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<VisibilityIcon sx={{ fontSize: 14 }} />}
+                        onClick={() => handleViewReviews(paper.id)}
+                        sx={{ fontSize: '0.75rem' }}
+                      >
+                        Reviews
+                      </Button>
+                      {['DISCUSSION', 'ACCEPTED', 'REJECTED'].includes(paper.status) && paper.rebuttalText && (
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          color="warning"
+                          onClick={() => {
+                            setActiveRebuttalText(paper.rebuttalText);
+                            setRebuttalDialogOpen(true);
+                          }}
+                          sx={{ fontSize: '0.75rem' }}
+                        >
+                          Rebuttal
+                        </Button>
+                      )}
+                    </Stack>
+                  </TableCell>
+
+                  {/* Citation Status */}
+                  <TableCell>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<FactCheckIcon sx={{ fontSize: 14 }} />}
+                      onClick={() => handleViewCitationReport(paper.id)}
+                      sx={{ fontSize: '0.75rem' }}
+                    >
+                      View Report
+                    </Button>
+                  </TableCell>
+
+                  {/* Paper State Selector */}
+                  <TableCell align="center">
+                    <Select
+                      size="small"
+                      value={paper.status}
+                      onChange={(e) => handleStatusChange(paper.id, paper.status, e.target.value as string)}
+                      sx={{
+                        minWidth: 140,
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        '& .MuiSelect-select': { py: 0.8 },
+                      }}
+                    >
+                      {ALL_STATUSES.map((s: string) => (
+                        <MenuItem key={s} value={s}>{s.replace('_', ' ')}</MenuItem>
+                      ))}
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
 
+      {/* ── Citation Report Dialog ── */}
       <Dialog open={citationReportOpen} onClose={() => setCitationReportOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Citation Report</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <FactCheckIcon sx={{ color: 'primary.main' }} />
+          Citation Report
+        </DialogTitle>
         <DialogContent>
           {activeReport ? (
             <CitationReportViewer report={activeReport} />
           ) : (
             <Box mt={2} textAlign="center">
-              <Typography mb={3}>No Citation Report found. Trigger extraction explicitly:</Typography>
+              <Typography mb={3} color="text.secondary">
+                No Citation Report found. Trigger extraction explicitly:
+              </Typography>
               <Stack direction="row" spacing={2} justifyContent="center">
                 <Button variant="outlined" onClick={handleVerifyRegex} disabled={loading}>
                   Run Static Regex Match
@@ -281,35 +409,60 @@ export default function ChairDashboard() {
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={() => setCitationReportOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
+      {/* ── History Dialog ── */}
       <Dialog open={historyDialogOpen} onClose={() => setHistoryDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Status Audit Trail</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <HistoryIcon sx={{ color: 'primary.main' }} />
+          Status Audit Trail
+        </DialogTitle>
         <DialogContent dividers>
           {activeHistory.length === 0 ? (
-            <Typography>No history logs available.</Typography>
+            <Typography color="text.secondary" sx={{ py: 2 }}>
+              No history logs available.
+            </Typography>
           ) : (
             <Stack spacing={2}>
               {activeHistory.map((hist, i) => (
-                <Box key={i} p={2} border={1} borderColor="grey.300" borderRadius={2}>
-                  <Typography variant="body2" color="text.secondary">
+                <Box
+                  key={i}
+                  sx={{
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <Typography variant="caption" color="text.tertiary">
                     {new Date(hist.timestamp).toLocaleString()}
                   </Typography>
-                  <Typography variant="body1">
-                    <strong>{hist.previousState}</strong> &rarr; <strong>{hist.newState}</strong>
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Triggered by: {hist.user?.firstName} {hist.user?.lastName} (ID: {hist.user?.id})
+                  <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
+                    <Chip
+                      label={hist.previousState?.replace('_', ' ')}
+                      size="small"
+                      sx={getStatusChipSx(hist.previousState)}
+                    />
+                    <ArrowForwardIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                    <Chip
+                      label={hist.newState?.replace('_', ' ')}
+                      size="small"
+                      sx={getStatusChipSx(hist.newState)}
+                    />
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary" mt={1} display="block">
+                    By: {hist.user?.firstName} {hist.user?.lastName}
                   </Typography>
                 </Box>
               ))}
             </Stack>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={() => setHistoryDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
@@ -322,6 +475,7 @@ export default function ChairDashboard() {
         />
       )}
 
+      {/* ── Snackbar ── */}
       <Snackbar 
         open={snackbar.open} 
         autoHideDuration={4000} 
@@ -332,60 +486,112 @@ export default function ChairDashboard() {
         </Alert>
       </Snackbar>
 
-      {/* Reviews Dialog */}
+      {/* ── Reviews Dialog ── */}
       <Dialog open={reviewsOpen} onClose={() => setReviewsOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Reviews (Chair View)</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <VisibilityIcon sx={{ color: 'primary.main' }} />
+          Reviews (Chair View)
+        </DialogTitle>
         <DialogContent dividers>
           {reviewsLoading ? (
-            <Box textAlign="center" py={3}><CircularProgress /></Box>
+            <Box textAlign="center" py={4}>
+              <CircularProgress sx={{ color: 'secondary.main' }} />
+            </Box>
           ) : reviewsData.length === 0 ? (
-            <Typography color="text.secondary">No reviews submitted yet.</Typography>
+            <Typography color="text.secondary" sx={{ py: 2 }}>
+              No reviews submitted yet.
+            </Typography>
           ) : (
-            <Stack spacing={3}>
+            <Stack spacing={2.5}>
               {reviewsData.map((r: any, i: number) => (
-                <Box key={r.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" gutterBottom>
+                <Box
+                  key={r.id}
+                  sx={{
+                    p: 2.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    gutterBottom
+                    sx={{ color: 'primary.main', fontWeight: 600 }}
+                  >
                     Reviewer {i + 1}{r.user ? ` — ${r.user.firstName} ${r.user.lastName}` : ''}
                   </Typography>
-                  <Stack direction="row" spacing={3} mb={1}>
+                  <Stack direction="row" spacing={4} mb={1.5}>
                     <Box>
-                      <Typography variant="caption">Score</Typography>
+                      <Typography variant="caption" color="text.secondary">Score</Typography>
                       <Rating value={r.score} max={10} readOnly size="small" />
                     </Box>
                     <Box>
-                      <Typography variant="caption">Confidence</Typography>
+                      <Typography variant="caption" color="text.secondary">Confidence</Typography>
                       <Rating value={r.confidence} max={5} readOnly size="small" />
                     </Box>
                   </Stack>
-                  <Typography variant="body2" gutterBottom sx={{ whiteSpace: 'pre-wrap' }}>
+                  <Typography
+                    variant="body2"
+                    gutterBottom
+                    sx={{
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: serifFont,
+                      lineHeight: 1.8,
+                    }}
+                  >
                     <strong>Feedback for Authors:</strong> {r.contentAuthors || 'None'}
                   </Typography>
-                  <Alert severity="info" sx={{ mt: 1 }}>
-                    <strong>Confidential (Chair only):</strong> {r.contentChair || 'None'}
+                  <Alert
+                    severity="info"
+                    sx={{
+                      mt: 1.5,
+                      bgcolor: '#F0F4F8',
+                      '& .MuiAlert-icon': { color: '#002147' },
+                    }}
+                  >
+                    <strong>Confidential (Chair only):</strong>{' '}
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{ fontFamily: serifFont, lineHeight: 1.8 }}
+                    >
+                      {r.contentChair || 'None'}
+                    </Typography>
                   </Alert>
                 </Box>
               ))}
             </Stack>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={() => setReviewsOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Rebuttal Dialog */}
+      {/* ── Rebuttal Dialog ── */}
       <Dialog open={rebuttalDialogOpen} onClose={() => setRebuttalDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Author Rebuttal</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <VisibilityIcon sx={{ color: 'warning.main' }} />
+          Author Rebuttal
+        </DialogTitle>
         <DialogContent dividers>
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+          <Typography
+            variant="body1"
+            sx={{
+              whiteSpace: 'pre-wrap',
+              fontFamily: serifFont,
+              lineHeight: 1.8,
+              py: 1,
+            }}
+          >
             {activeRebuttalText}
           </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={() => setRebuttalDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 }
-

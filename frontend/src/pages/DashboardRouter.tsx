@@ -1,6 +1,7 @@
- import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, CircularProgress, Typography, Stack, Alert, Button } from '@mui/material';
+import SchoolIcon from '@mui/icons-material/School';
 import api from '../api';
 
 export default function DashboardRouter() {
@@ -42,10 +43,31 @@ export default function DashboardRouter() {
 
   if (error) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <Stack spacing={2} alignItems="center">
-          <Alert severity="error">You do not have access to this conference.</Alert>
-          <Button variant="contained" onClick={() => navigate('/conferences', { replace: true })}>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        sx={{ bgcolor: 'background.default' }}
+      >
+        <Stack
+          spacing={2.5}
+          alignItems="center"
+          sx={{
+            animation: 'fadeInUp 350ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
+            '@keyframes fadeInUp': {
+              from: { opacity: 0, transform: 'translateY(12px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+          }}
+        >
+          <Alert severity="error" sx={{ maxWidth: 400 }}>
+            You do not have access to this conference.
+          </Alert>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/conferences', { replace: true })}
+          >
             Return to Conference List
           </Button>
         </Stack>
@@ -54,10 +76,29 @@ export default function DashboardRouter() {
   }
 
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-      <Stack spacing={2} alignItems="center">
-        <CircularProgress />
-        <Typography>Loading your dashboard...</Typography>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      sx={{ bgcolor: 'background.default' }}
+    >
+      <Stack
+        spacing={2}
+        alignItems="center"
+        sx={{
+          animation: 'fadeInUp 350ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
+          '@keyframes fadeInUp': {
+            from: { opacity: 0, transform: 'translateY(12px)' },
+            to: { opacity: 1, transform: 'translateY(0)' },
+          },
+        }}
+      >
+        <SchoolIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+        <CircularProgress sx={{ color: 'secondary.main' }} />
+        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+          Loading your dashboard…
+        </Typography>
       </Stack>
     </Box>
   );
