@@ -39,7 +39,7 @@ export default function DashboardLayout({
     px: 2,
     py: 1,
     borderRadius: 1,
-    transition: 'all 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+    transition: 'background-color 100ms ease',
     '&::after': {
       content: '""',
       position: 'absolute' as const,
@@ -50,7 +50,7 @@ export default function DashboardLayout({
       height: '2px',
       backgroundColor: '#C5A059',
       borderRadius: '2px',
-      transition: 'transform 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+      transition: 'transform 100ms ease',
     },
     '&:hover': {
       color: '#FFFFFF',
@@ -116,7 +116,7 @@ export default function DashboardLayout({
                 px: 2,
                 py: 1,
                 borderRadius: 1,
-                transition: 'all 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+                transition: 'background-color 100ms ease',
                 '&:hover': {
                   color: '#FFFFFF',
                   backgroundColor: 'rgba(163, 38, 56, 0.15)',
@@ -133,10 +133,10 @@ export default function DashboardLayout({
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3 } }}>
         <Box
           sx={{
-            animation: 'fadeInUp 350ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
-            '@keyframes fadeInUp': {
-              from: { opacity: 0, transform: 'translateY(12px)' },
-              to: { opacity: 1, transform: 'translateY(0)' },
+            animation: 'clipReveal 150ms cubic-bezier(0.16, 1, 0.3, 1) both',
+            '@keyframes clipReveal': {
+              from: { clipPath: 'inset(0 0 100% 0)' },
+              to: { clipPath: 'inset(0)' },
             },
           }}
         >

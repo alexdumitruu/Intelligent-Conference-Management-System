@@ -92,13 +92,7 @@ export default function ConferenceSelection() {
           justifyContent="space-between"
           alignItems="center"
           mb={4}
-          sx={{
-            animation: 'fadeInUp 350ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
-            '@keyframes fadeInUp': {
-              from: { opacity: 0, transform: 'translateY(12px)' },
-              to: { opacity: 1, transform: 'translateY(0)' },
-            },
-          }}
+          sx={{}}
         >
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
@@ -134,14 +128,7 @@ export default function ConferenceSelection() {
           <Box
             textAlign="center"
             mt={10}
-            sx={{
-              animation: 'fadeInUp 400ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
-              animationDelay: '100ms',
-              '@keyframes fadeInUp': {
-                from: { opacity: 0, transform: 'translateY(12px)' },
-                to: { opacity: 1, transform: 'translateY(0)' },
-              },
-            }}
+            sx={{}}
           >
             <SchoolIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
             <Typography variant="h5" color="text.secondary">
@@ -160,19 +147,18 @@ export default function ConferenceSelection() {
                   sx={{
                     cursor: 'pointer',
                     borderRadius: 3,
-                    transition: 'all 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+                    transition: 'border-color 100ms ease, background-color 100ms ease',
                     border: '1px solid',
                     borderColor: 'divider',
-                    animation: 'fadeInUp 400ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
-                    animationDelay: `${index * 60}ms`,
-                    '@keyframes fadeInUp': {
-                      from: { opacity: 0, transform: 'translateY(12px)' },
-                      to: { opacity: 1, transform: 'translateY(0)' },
+                    animation: 'clipReveal 150ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                    animationDelay: `${index * 40}ms`,
+                    '@keyframes clipReveal': {
+                      from: { clipPath: 'inset(0 0 100% 0)' },
+                      to: { clipPath: 'inset(0)' },
                     },
                     '&:hover': {
                       borderColor: 'secondary.main',
-                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.025)',
-                      transform: 'translateY(-3px)',
+                      backgroundColor: 'rgba(0, 33, 71, 0.015)',
                     },
                   }}
                   onClick={() => navigate(`/conferences/${conf.id}/dashboard`)}

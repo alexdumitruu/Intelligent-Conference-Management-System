@@ -125,7 +125,7 @@ const theme = createTheme({
           borderRadius: 8,
           fontWeight: 600,
           textTransform: 'none' as const,
-          transition: 'all 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+          transition: 'border-color 100ms ease, background-color 100ms ease',
           '&:focus-visible': {
             boxShadow: '0 0 0 3px rgba(197, 160, 89, 0.4)',
           },
@@ -151,7 +151,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          transition: 'box-shadow 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0), transform 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+          transition: 'border-color 100ms ease',
         },
       },
     },
@@ -172,13 +172,13 @@ const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
-            transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)',
+            transition: 'border-color 100ms ease',
             '&.Mui-focused': {
               boxShadow: '0 0 0 3px rgba(197, 160, 89, 0.4)',
             },
             '& fieldset': {
               borderColor: '#E2E8F0',
-              transition: 'border-color 150ms ease',
+              transition: 'border-color 100ms ease',
             },
             '&:hover fieldset': {
               borderColor: '#CBD5E0',
@@ -198,6 +198,11 @@ const theme = createTheme({
         paper: {
           borderRadius: 12,
           boxShadow: '0 20px 25px -5px rgba(0,0,0,0.07), 0 10px 10px -5px rgba(0,0,0,0.03)',
+          animation: 'mechanicalSnap 150ms cubic-bezier(0.16, 1, 0.3, 1) both',
+          '@keyframes mechanicalSnap': {
+            from: { transform: 'scale(0.97) translateY(4px)' },
+            to:   { transform: 'scale(1) translateY(0)' },
+          },
         },
       },
     },
@@ -239,7 +244,7 @@ const theme = createTheme({
     MuiTableRow: {
       styleOverrides: {
         root: {
-          transition: 'background-color 150ms ease',
+          transition: 'background-color 100ms ease',
           '&:hover': {
             backgroundColor: 'rgba(0, 33, 71, 0.02)',
           },

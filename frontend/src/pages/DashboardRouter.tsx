@@ -54,10 +54,10 @@ export default function DashboardRouter() {
           spacing={2.5}
           alignItems="center"
           sx={{
-            animation: 'fadeInUp 350ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
-            '@keyframes fadeInUp': {
-              from: { opacity: 0, transform: 'translateY(12px)' },
-              to: { opacity: 1, transform: 'translateY(0)' },
+            animation: 'mechanicalSnap 150ms cubic-bezier(0.16, 1, 0.3, 1) both',
+            '@keyframes mechanicalSnap': {
+              from: { transform: 'scale(0.97) translateY(4px)' },
+              to: { transform: 'scale(1) translateY(0)' },
             },
           }}
         >
@@ -87,10 +87,10 @@ export default function DashboardRouter() {
         spacing={2}
         alignItems="center"
         sx={{
-          animation: 'fadeInUp 350ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
-          '@keyframes fadeInUp': {
-            from: { opacity: 0, transform: 'translateY(12px)' },
-            to: { opacity: 1, transform: 'translateY(0)' },
+          animation: 'mechanicalSnap 150ms cubic-bezier(0.16, 1, 0.3, 1) both',
+          '@keyframes mechanicalSnap': {
+            from: { transform: 'scale(0.97) translateY(4px)' },
+            to: { transform: 'scale(1) translateY(0)' },
           },
         }}
       >

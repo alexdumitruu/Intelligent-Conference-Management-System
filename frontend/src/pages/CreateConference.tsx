@@ -131,7 +131,7 @@ export default function CreateConference() {
                   bgcolor: isDoubleBlind ? 'success.light' : 'transparent',
                   border: '1px solid',
                   borderColor: isDoubleBlind ? 'secondary.main' : 'divider',
-                  transition: 'all 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+                  transition: 'border-color 100ms ease, background-color 100ms ease',
                 }}
               />
 

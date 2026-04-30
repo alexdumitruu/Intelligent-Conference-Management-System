@@ -505,7 +505,7 @@ export default function AuthorDashboard() {
                   textAlign: 'center',
                   cursor: 'pointer',
                   bgcolor: isDragActive ? 'rgba(197, 160, 89, 0.06)' : 'transparent',
-                  transition: 'all 250ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+                  transition: 'border-color 100ms ease',
                   '&:hover': {
                     borderColor: 'secondary.main',
                     bgcolor: 'rgba(197, 160, 89, 0.04)',

@@ -457,9 +457,11 @@ export class PapersService {
       include: [
         {
           model: PaperAuthor,
+          as: 'authors',
           include: [
             {
               model: User,
+              as: 'user',
               attributes: [
                 'id',
                 'firstName',

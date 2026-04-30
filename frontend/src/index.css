@@ -1,7 +1,3 @@
-/* ============================================================
-   Modern Academic Scholar — Design System Globals
-   ============================================================ */
-
 /* ── Design Tokens as CSS Custom Properties ── */
 :root {
   /* Colors — Primary */
@@ -66,12 +62,10 @@
   --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
   --shadow-focus-ring: 0 0 0 3px rgba(197, 160, 89, 0.4);
 
-  /* Motion */
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 350ms;
-  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
-  --easing-elegant: cubic-bezier(0.25, 0.1, 0.25, 1.0);
+  /* Motion — Editorial Mechanical */
+  --duration-snap: 150ms;
+  --duration-hover: 100ms;
+  --easing-snap: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Root setup */
   font-family: var(--font-sans);
@@ -198,20 +192,24 @@ h4 { font-size: 1.25rem; }
   background: var(--color-text-tertiary);
 }
 
-/* ── Subtle Entrance Animation ── */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* ── Mechanical Snap — Dialogs/Cards ── */
+@keyframes mechanicalSnap {
+  from { transform: scale(0.97) translateY(4px); }
+  to   { transform: scale(1) translateY(0); }
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp var(--duration-slow) var(--easing-elegant) both;
+/* ── Clip-Path Wipe — Lists/Tables ── */
+@keyframes clipReveal {
+  from { clip-path: inset(0 0 100% 0); }
+  to   { clip-path: inset(0); }
+}
+
+.animate-snap {
+  animation: mechanicalSnap var(--duration-snap) var(--easing-snap) both;
+}
+
+.animate-clip-reveal {
+  animation: clipReveal var(--duration-snap) var(--easing-snap) both;
 }
 
 /* ── Selection Color ── */

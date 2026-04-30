@@ -42,10 +42,10 @@ export default function Register() {
           p: 0,
           borderRadius: 3,
           overflow: 'hidden',
-          animation: 'fadeInUp 350ms cubic-bezier(0.25, 0.1, 0.25, 1.0) both',
-          '@keyframes fadeInUp': {
-            from: { opacity: 0, transform: 'translateY(16px)' },
-            to: { opacity: 1, transform: 'translateY(0)' },
+          animation: 'mechanicalSnap 150ms cubic-bezier(0.16, 1, 0.3, 1) both',
+          '@keyframes mechanicalSnap': {
+            from: { transform: 'scale(0.97) translateY(4px)' },
+            to: { transform: 'scale(1) translateY(0)' },
           },
         }}
       >
