@@ -219,10 +219,10 @@ export default function ReviewerDashboard() {
                           value="YES"
                           sx={{
                             '&.Mui-selected': {
-                              bgcolor: '#FDFBF7',
-                              color: '#8B6914',
-                              borderColor: '#C5A059',
-                              '&:hover': { bgcolor: '#FAF5EB' },
+                              bgcolor: 'var(--color-success)',
+                              color: 'var(--color-text-inverse)',
+                              borderColor: 'var(--color-success)',
+                              '&:hover': { bgcolor: 'var(--color-success)' },
                             },
                           }}
                         >
@@ -232,10 +232,10 @@ export default function ReviewerDashboard() {
                           value="MAYBE"
                           sx={{
                             '&.Mui-selected': {
-                              bgcolor: '#FFFBEB',
-                              color: '#92400E',
-                              borderColor: '#D97706',
-                              '&:hover': { bgcolor: '#FFF7DB' },
+                              bgcolor: 'var(--color-warning)',
+                              color: 'var(--color-text-inverse)',
+                              borderColor: 'var(--color-warning)',
+                              '&:hover': { bgcolor: 'var(--color-warning)' },
                             },
                           }}
                         >
@@ -245,10 +245,10 @@ export default function ReviewerDashboard() {
                           value="NO"
                           sx={{
                             '&.Mui-selected': {
-                              bgcolor: '#FDF5F6',
-                              color: '#A32638',
-                              borderColor: '#A32638',
-                              '&:hover': { bgcolor: '#FBECED' },
+                              bgcolor: 'var(--color-error)',
+                              color: 'var(--color-text-inverse)',
+                              borderColor: 'var(--color-error)',
+                              '&:hover': { bgcolor: 'var(--color-error)' },
                             },
                           }}
                         >

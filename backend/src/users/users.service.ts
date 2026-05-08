@@ -44,7 +44,7 @@ export class UsersService {
 
   async searchByEmail(query: string, excludeUserId?: number): Promise<User[]> {
     const where: any = {
-      email: { [Op.iLike]: `%${query}%` },
+      email: { [Op.like]: `%${query}%` },
     };
     if (excludeUserId) {
       where.id = { [Op.ne]: excludeUserId };

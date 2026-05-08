@@ -452,16 +452,14 @@ export class PapersService {
     const authorRecords = await PaperAuthor.findAll({ where: { userId } });
     const paperIds = authorRecords.map((a) => a.paperId);
     if (paperIds.length === 0) return [];
-    return this.paperModel.findAll({
+    return await this.paperModel.findAll({
       where: { conferenceId, id: paperIds },
       include: [
         {
           model: PaperAuthor,
-          as: 'authors',
           include: [
             {
               model: User,
-              as: 'user',
               attributes: [
                 'id',
                 'firstName',

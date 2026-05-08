@@ -432,6 +432,7 @@ export default function AuthorDashboard() {
               </Divider>
               <Autocomplete
                 freeSolo
+                value={null}
                 options={coAuthorResults}
                 getOptionLabel={(option) => 
                   typeof option === 'string' ? option : `${option.firstName} ${option.lastName} (${option.email})`
